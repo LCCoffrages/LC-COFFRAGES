@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Configurateur LC">
+    <title>Configurateur LC Coffrages</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e3a8a; /* Bleu chantier pro */
+            --primary-dark: #1e293b;
+            --accent: #e11d48; /* Rouge sécurité */
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text-main); 
+            margin: 0; padding: 0;
+            height: 100vh;
+            display: flex; flex-direction: column;
+            /* Empêcher le rebond élastique sur iOS */
+            overscroll-behavior: none;
+        }
+        
+        /* --- HEADER --- */
+        header {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px; /* Marges réduites pour mobile */
+            height: 60px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .header-title h1 {
+            font-size: 1rem; font-weight: 600; color: var(--text-main); margin: 0;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .header-title span { color: var(--text-muted); font-weight: 400; font-size: 0.8rem; display: block; }
+
+        .brand {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .brand-text {
+            text-align: right;
+            line-height: 1.1;
+        }
+        .brand-name {
+            display: block; font-weight: 800; color: var(--primary); 
+            font-size: 1rem; letter-spacing: -0.5px;
+        }
+        .brand-sub {
+            display: none; /* Caché sur mobile pour gagner place */
+        }
+        @media (min-width: 600px) {
+            .brand-sub { display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        }
+        .brand-logo {
+            height: 35px; width: 35px;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 1rem;
+        }
+
+        /* --- LAYOUT --- */
+        .main-container {
+            flex: 1;
+            display: flex; flex-direction: column; /* Force colonne sur mobile par défaut */
+            gap: 20px;
+            padding: 15px;
+            width: 100%; box-sizing: border-box;
+            overflow-y: auto; /* Scroll vertical */
+        }
+
+        @media (min-width: 900px) {
+            .main-container {
+                display: grid; 
+                grid-template-columns: 320px 1fr; 
+                padding: 30px 40px;
+                max-width: 1600px; margin: 0 auto;
+                overflow-y: visible;
+            }
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            display: flex; flex-direction: column; gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .panel {
+            background: var(--surface); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        h3 {
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); margin: 0 0 15px 0; font-weight: 700;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { 
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9rem; color: var(--text-main); 
+        }
+        
+        .input-wrapper { position: relative; }
+        .input-wrapper input, .input-wrapper select {
+            width: 100%; padding: 12px 16px; 
+            border: 1px solid var(--border); border-radius: 8px; 
+            font-size: 1rem; color: var(--text-main); font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fff; box-sizing: border-box;
+            -webkit-appearance: none; /* Style iOS natif propre */
+        }
+        .input-wrapper input:focus, .input-wrapper select:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+        .unit {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); font-size: 0.9rem; pointer-events: none;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border);
+            margin-bottom: 15px; cursor: pointer;
+        }
+        .toggle-label { font-weight: 500; font-size: 0.95rem; color: var(--text-main); }
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px; flex-shrink: 0;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 18px; width: 18px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* KPI Card */
+        .kpi-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white; padding: 20px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.3);
+        }
+        .kpi-content { display: flex; flex-direction: column; }
+        .kpi-label { font-size: 0.8rem; text-transform: uppercase; opacity: 0.8; margin-bottom: 4px; }
+        .kpi-value { font-size: 1.8rem; font-weight: 700; }
+        .kpi-icon { 
+            font-size: 2rem; background: rgba(255,255,255,0.2); 
+            width: 50px; height: 50px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+        }
+
+        /* --- VISUALIZATION --- */
+        .visualization {
+            background: white; border-radius: 16px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; position: relative;
+            min-height: 400px; /* Hauteur min sur mobile */
+        }
+        
+        .viz-label {
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(255,255,255,0.9); padding: 6px 10px;
+            border-radius: 6px; border: 1px solid var(--border);
+            font-size: 0.75rem; color: var(--text-muted);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
+        canvas { max-width: 100%; height: auto; object-fit: contain; }
+
+        @media (min-width: 900px) {
+            .visualization { min-height: 600px; }
+            canvas { max-height: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>Configurateur</h1>
+            <span>LC Coffrages</span>
+        </div>
+        <div class="brand">
+            <div class="brand-text">
+                <span class="brand-name">LC</span>
+            </div>
+            <div class="brand-logo">LC</div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- SIDEBAR CONTROLS -->
+        <aside class="sidebar">
+            <div class="panel">
+                <h3>Paramètres</h3>
+                
+                <div class="input-group">
+                    <label>Largeur</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="largeur" value="1.00" step="0.01" oninput="calculer()">
+                        <span class="unit">m</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Hauteur</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="hauteur" value="1.00" step="0.01" oninput="calculer()">
+                        <span class="unit">m</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Type</label>
+                    <div class="input-wrapper">
+                        <select id="typeMannequin" onchange="calculer()">
+                            <option value="4" selected>4 Faces (Fenêtre)</option>
+                            <option value="3">3 Faces (Porte)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label class="toggle-container" for="renforce">
+                    <span class="toggle-label">Renforcé (+1)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="renforce" onchange="calculer()">
+                        <span class="slider"></span>
+                    </label>
+                </label>
+            </div>
+
+            <!-- KPI RESULTAT -->
+            <div id="resultats"></div>
+        </aside>
+
+        <!-- MAIN VISUALIZATION -->
+        <main class="visualization">
+            <div class="viz-label">Vue de Face</div>
+            <canvas id="monDessin" width="1000" height="1000"></canvas>
+        </main>
+    </div>
+
+<script>
+    const e = 0.050; // Cadre 50mm
+
+    function calculer() {
+        const L = parseFloat(document.getElementById('largeur').value);
+        const H = parseFloat(document.getElementById('hauteur').value);
+        const type = document.getElementById('typeMannequin').value;
+        const isReinforced = document.getElementById('renforce').checked;
+        const canvas = document.getElementById('monDessin');
+        const ctx = canvas.getContext('2d');
+        const resBox = document.getElementById('resultats');
+
+        if (isNaN(L) || isNaN(H)) return;
+
+        // ==========================================
+        // 1. CALCULS (LOGIQUE INCHANGÉE)
+        // ==========================================
+        
+        const L_int = L - 2*e;
+        const H_ref = (type == "4") ? H - 2*e : H - e - 0.20; 
+        const min_dim = Math.min(L_int, H_ref);
+        let bras = 50;
+        if ((min_dim - 2*(0.80/Math.sqrt(2))) >= 0) bras = 80;
+        else if ((min_dim - 2*(0.60/Math.sqrt(2))) >= 0) bras = 60;
+        const proj = (bras / 100) / Math.sqrt(2); 
+
+        let y_ref_bas = (type == "3") ? 0.20 : e;
+        let y_ref_haut = H - e;
+        let limit_bas = y_ref_bas + proj; 
+        let limit_haut = y_ref_haut - proj;
+        let zone_libre = limit_haut - limit_bas;
+
+        // Horizontaux
+        let renforts_h = [];
+        let nb_renforts_h = 0;
+        if (zone_libre > 0.45) {
+            if (zone_libre <= 0.60) {
+                nb_renforts_h = 1;
+            } else {
+                nb_renforts_h = Math.ceil(zone_libre / 0.60);
+            }
+        }
+        if (isReinforced) nb_renforts_h += 1;
+
+        if (nb_renforts_h > 0) {
+            if (isReinforced) {
+                let step = zone_libre / (nb_renforts_h + 1);
+                for(let i=1; i <= nb_renforts_h; i++) {
+                    renforts_h.push(limit_bas + (i * step));
+                }
+            } else {
+                if (nb_renforts_h === 1) {
+                    renforts_h.push(limit_bas + (zone_libre / 2));
+                } else {
+                    let espace_interne_total = (nb_renforts_h - 1) * 0.60;
+                    let reste = zone_libre - espace_interne_total;
+                    let bout = reste / 2;
+                    renforts_h.push(limit_bas + bout);
+                    for(let i=1; i < nb_renforts_h; i++) {
+                        renforts_h.push(renforts_h[i-1] + 0.60);
+                    }
+                }
+            }
+        }
+
+        // Verticaux
+        let renforts_v = [];
+        let nb_v = 0;
+        if (L >= 1.71 && L <= 2.20) {
+            nb_v = 1; 
+        } else if (L > 2.20) {
+            nb_v = Math.floor(L); 
+        }
+        if (isReinforced) nb_v += 1;
+        for(let k=1; k<=nb_v; k++) { renforts_v.push(k * (L/(nb_v+1))); }
+
+        let display_renforts = [...renforts_h];
+        if (type == "3") display_renforts.unshift(0.20); 
+
+
+        // ==========================================
+        // 2. DESSIN 3D REALISTE (INCHANGÉ)
+        // ==========================================
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const marginX = 200;
+        const marginY = 80;
+        const scale = Math.min((canvas.width - 2*marginX)/L, (canvas.height - 2*marginY)/H);
+        
+        const startX = (canvas.width - L*scale) / 2;
+        const startY = (canvas.height - H*scale) / 2 + H*scale;
+
+        function toX(val) { return startX + val * scale; }
+        function toY(val) { return startY - val * scale; }
+
+        function drawTimber(x1, y1, x2, y2, strokeColor, thickness_cm) {
+            const px1 = toX(x1); const py1 = toY(y1);
+            const px2 = toX(x2); const py2 = toY(y2);
+            const dx = px2 - px1; const dy = py2 - py1;
+            const length = Math.sqrt(dx*dx + dy*dy);
+            const angle = Math.atan2(dy, dx);
+            const thickPx = Math.max(8, thickness_cm * scale);
+
+            ctx.save();
+            ctx.translate(px1, py1); ctx.rotate(angle);
+
+            ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 5;
+            let grad = ctx.createLinearGradient(0, -thickPx/2, 0, thickPx/2);
+            grad.addColorStop(0, "#dcb68a"); grad.addColorStop(0.5, "#cd853f"); grad.addColorStop(1, "#8b4513"); 
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.rect(0, -thickPx/2, length, thickPx); ctx.fill();
+            ctx.shadowColor = "transparent";
+
+            ctx.strokeStyle = "rgba(60, 30, 10, 0.15)"; ctx.lineWidth = 1.5;
+            for(let i=0; i<3; i++) {
+                let yStart = (Math.random() - 0.5) * thickPx * 0.8;
+                let cp1x = length * 0.3; let cp1y = (Math.random() - 0.5) * thickPx;
+                let cp2x = length * 0.7; let cp2y = (Math.random() - 0.5) * thickPx;
+                let yEnd = (Math.random() - 0.5) * thickPx * 0.8;
+                ctx.beginPath(); ctx.moveTo(0, yStart); ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, length, yEnd); ctx.stroke();
+            }
+
+            ctx.lineWidth = 3; ctx.strokeStyle = strokeColor;
+            ctx.strokeRect(0, -thickPx/2, length, thickPx);
+
+            function drawBolt(bx, by) {
+                ctx.save(); ctx.fillStyle = "#bdc3c7";
+                ctx.beginPath(); ctx.arc(bx, by, thickPx*0.25, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#fff";
+                ctx.beginPath(); ctx.arc(bx-1, by-1, thickPx*0.08, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = "#7f8c8d"; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(bx-2, by); ctx.lineTo(bx+2, by); ctx.stroke();
+                ctx.restore();
+            }
+            drawBolt(thickPx/2, 0); drawBolt(length - thickPx/2, 0);
+            ctx.restore();
+        }
+
+        const frameColor = "#555";
+        drawTimber(0,0,0,H, frameColor, 0.05); 
+        drawTimber(L,0,L,H, frameColor, 0.05); 
+        drawTimber(0,H,L,H, frameColor, 0.05); 
+        if(type=="4") drawTimber(0,0,L,0, frameColor, 0.05); 
+
+        const vColor = "#27ae60"; 
+        renforts_v.forEach(x => drawTimber(x, (type=='4'?e:0), x, H-e, vColor, 0.05));
+        const hColor = "#c0392b"; 
+        display_renforts.forEach(y => drawTimber(e, y, L-e, y, hColor, 0.05));
+        const armColor = "#2980b9"; 
+        drawTimber(e, limit_bas, e+proj, y_ref_bas, armColor, 0.05);
+        drawTimber(L-e, limit_bas, L-e-proj, y_ref_bas, armColor, 0.05);
+        drawTimber(e, limit_haut, e+proj, y_ref_haut, armColor, 0.05);
+        drawTimber(L-e, limit_haut, L-e-proj, y_ref_haut, armColor, 0.05);
+
+        // --- COTATIONS ---
+        ctx.font = "600 13px Inter";
+        function drawTick(x, y, isVertical, color="#2c3e50") {
+            ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = color;
+            const len = 5; 
+            if(isVertical) { ctx.moveTo(toX(x)-len, toY(y)); ctx.lineTo(toX(x)+len, toY(y)); }
+            else { ctx.moveTo(toX(x), toY(y)-len); ctx.lineTo(toX(x), toY(y)+len); }
+            ctx.stroke();
+        }
+
+        const pixelOffsetX = 50; 
+        
+        ctx.beginPath(); ctx.strokeStyle = "#95a5a6"; ctx.lineWidth=1;
+        ctx.moveTo(toX(L)+pixelOffsetX, toY(0)); ctx.lineTo(toX(L)+pixelOffsetX, toY(H));
+        ctx.stroke();
+
+        ctx.fillStyle = "#34495e"; ctx.textAlign = "left";
+        ctx.fillText("0.00 (Sol)", toX(L)+pixelOffsetX+10, toY(0)+4);
+        drawTick(L, 0, true);
+
+        drawTick(L + (pixelOffsetX/scale), H, true, "#333");
+        ctx.fillStyle = "#333";
+        ctx.fillText(H.toFixed(2)+"m (Haut)", toX(L)+pixelOffsetX+10, toY(H)+4);
+
+        display_renforts.forEach(y => {
+            ctx.setLineDash([2, 2]); ctx.strokeStyle = "#bdc3c7";
+            ctx.beginPath(); ctx.moveTo(toX(L), toY(y)); ctx.lineTo(toX(L)+pixelOffsetX, toY(y)); ctx.stroke();
+            ctx.setLineDash([]);
+            drawTick(L + (pixelOffsetX/scale), y, true, "#c0392b");
+            ctx.fillStyle = "#c0392b";
+            ctx.fillText(y.toFixed(2)+"m", toX(L)+pixelOffsetX+10, toY(y)+4);
+        });
+
+        const pixelOffsetY = 40;
+        const y_dim_base = 0; 
+        
+        ctx.beginPath(); ctx.strokeStyle = "#95a5a6"; ctx.lineWidth=1;
+        ctx.moveTo(toX(0), toY(y_dim_base)+pixelOffsetY); ctx.lineTo(toX(L), toY(y_dim_base)+pixelOffsetY);
+        ctx.stroke();
+        
+        ctx.fillStyle = "#34495e"; ctx.textAlign = "center";
+        ctx.fillText("0.00", toX(0), toY(y_dim_base)+pixelOffsetY+18);
+        ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle="#333";
+        ctx.moveTo(toX(0), toY(y_dim_base)+pixelOffsetY-5); ctx.lineTo(toX(0), toY(y_dim_base)+pixelOffsetY+5); ctx.stroke();
+
+        renforts_v.forEach(x => {
+            ctx.setLineDash([2, 2]); ctx.strokeStyle = "#bdc3c7";
+            ctx.beginPath(); ctx.moveTo(toX(x), toY(0)); ctx.lineTo(toX(x), toY(y_dim_base)+pixelOffsetY); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.beginPath(); ctx.lineWidth=2; ctx.strokeStyle="#27ae60";
+            ctx.moveTo(toX(x), toY(y_dim_base)+pixelOffsetY-5); ctx.lineTo(toX(x), toY(y_dim_base)+pixelOffsetY+5); ctx.stroke();
+            ctx.fillStyle = "#27ae60";
+            ctx.fillText(x.toFixed(2)+"m", toX(x), toY(y_dim_base)+pixelOffsetY+18);
+        });
+
+        // --- UPDATE KPI CARD ---
+        let html = `
+            <div class="kpi-card">
+                <div class="kpi-content">
+                    <span class="kpi-label">Bras de Force requis</span>
+                    <span class="kpi-value">${bras} cm</span>
+                </div>
+                <div class="kpi-icon">📐</div>
+            </div>
+        `;
+        resBox.innerHTML = html;
+    }
+
+    window.onload = calculer;
+</script>
+
+</body>
+</html>
+
+### Étape 2 : L'installation (Solution simple)
+
+Une fois que tu as sauvegardé ce nouveau code dans ton fichier `Mannequins.html` :
+
+1.  **Envoie-toi le fichier** par email ou AirDrop sur ton iPhone.
+2.  **Ouvre le fichier** directement depuis tes mails ou l'app "Fichiers".
+    * *Ça s'ouvrira dans Safari ou un viewer.*
+3.  **Pour l'avoir comme une app (sans hébergement web)** :
+    * Le plus simple est d'utiliser une application gratuite comme **"HTML Viewer"** sur l'App Store. Tu ouvres ton fichier dedans, et c'est réglé.
+    * **Sinon (le top)** : Tu le mets sur un site gratuit (comme *tiiny.host* qui prend 2 secondes), tu récupères le lien, tu l'ouvres dans Safari, et tu fais : **Bouton Partager** (carré flèche haut) > **"Sur l'écran d'accueil"**. Là, tu auras ta vraie icône et ton app en plein écran comme une pro.
