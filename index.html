@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="build-id" content="20260525-192710">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -709,25 +710,53 @@
 
 
     <script>
-      // PWA : enregistrement du Service Worker pour les mises a jour automatiques
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').then((reg) => {
-            // Verifier les updates a chaque chargement
-            reg.update();
-            reg.addEventListener('updatefound', () => {
-              const nw = reg.installing;
-              if (!nw) return;
-              nw.addEventListener('statechange', () => {
-                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                  // Nouvelle version dispo, recharge automatique
-                  window.location.reload();
-                }
-              });
+      // PWA : Service Worker + check de version force (anti-cache iOS)
+      (function () {
+        const CURRENT_BUILD = document.querySelector('meta[name=build-id]').content;
+        let reloading = false;
+        function safeReload() {
+          if (reloading) return;
+          reloading = true;
+          if ('caches' in window) {
+            caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+              .finally(() => window.location.reload());
+          } else {
+            window.location.reload();
+          }
+        }
+
+        // Verifie distant pour build-id != => reload force
+        function checkRemoteVersion() {
+          fetch('./index.html?_v=' + Date.now(), { cache: 'no-store' })
+            .then((r) => r.text())
+            .then((txt) => {
+              const m = txt.match(/<meta name="build-id" content="([^"]+)"/);
+              if (m && m[1] !== CURRENT_BUILD) {
+                console.log('Nouvelle version detectee :', m[1]);
+                safeReload();
+              }
+            })
+            .catch(() => {});
+        }
+
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.addEventListener('controllerchange', safeReload);
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').then((reg) => {
+              reg.update();
+              setInterval(() => reg.update(), 60000);
             });
+            // 1er check apres 2s, puis toutes les 60s
+            setTimeout(checkRemoteVersion, 2000);
+            setInterval(checkRemoteVersion, 60000);
           });
-        });
-      }
+        } else {
+          window.addEventListener('load', () => {
+            setTimeout(checkRemoteVersion, 2000);
+            setInterval(checkRemoteVersion, 60000);
+          });
+        }
+      })();
     </script>
 </body>
 </html>
