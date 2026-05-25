@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Configurateur LC">
+    <meta name="apple-mobile-web-app-title" content="LC Coffrages">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
     <title>Configurateur LC Coffrages</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -702,5 +707,27 @@
     });
 </script>
 
+
+    <script>
+      // PWA : enregistrement du Service Worker pour les mises a jour automatiques
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then((reg) => {
+            // Verifier les updates a chaque chargement
+            reg.update();
+            reg.addEventListener('updatefound', () => {
+              const nw = reg.installing;
+              if (!nw) return;
+              nw.addEventListener('statechange', () => {
+                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                  // Nouvelle version dispo, recharge automatique
+                  window.location.reload();
+                }
+              });
+            });
+          });
+        });
+      }
+    </script>
 </body>
 </html>
