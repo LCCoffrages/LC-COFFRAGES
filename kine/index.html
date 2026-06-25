@@ -337,8 +337,8 @@
   <div class="rep-bar noprint">
     <button onclick="closeReport()">✕</button>
     <span class="sp"></span>
-    <button onclick="window.print()">🖨️ Enregistrer / PDF</button>
-    <button onclick="mailReport()">✉️ Mail</button>
+    <button onclick="window.print()">🖨️ PDF</button>
+    <button id="repSend" onclick="mailReport()">✉️ Envoyer</button>
   </div>
   <div class="rep-mail noprint">
     <span style="font-size:13px;color:#475569">Email destinataire :</span>
@@ -610,7 +610,23 @@ function genReport(p){
   h+='</div><div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:22px;border-top:1px solid #e2e8f0;padding-top:12px">MobiDerm — by Professeur Johan Legon</div>';
   return h;
 }
-function mailReport(){let to=DB.email||document.getElementById('mailDest').value.trim();if(!to){to=(prompt('Adresse email du destinataire :')||'').trim();if(!to)return;DB.email=to;saveDB();document.getElementById('mailDest').value=to;}const p=reportPatient;location.href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent('Dossier MobiDerm — '+patName(p))+'&body='+encodeURIComponent('Bonjour,\n\nCi-joint le dossier de '+patName(p)+'.\n(Pense à joindre le PDF que tu viens d\'enregistrer.)\n\nMobiDerm — by Professeur Johan Legon');}
+const PDF_MAILER='https://script.google.com/macros/s/AKfycbxoS-8KXa67rC0xQ_ViPBA8DBbDP7PZtbmlgocyB9aD8UDtrvO1JsUxUwmfo0MfCPENmQ/exec';
+function reportHTMLForPDF(){
+  const css='<meta charset="utf-8"><style>body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;padding:12px;font-size:14px}.rep-h{display:flex;align-items:center;border-bottom:3px solid #0d9488;padding-bottom:10px;margin-bottom:14px}.rep-h .lg{font-size:24px;font-weight:800;color:#0d9488}.rep-sec{margin:14px 0}.rep-sec h4{font-size:15px;margin-bottom:6px;color:#0f766e}.rep-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}.rep-tbl th,.rep-tbl td{border:1px solid #ccc;padding:6px 8px;text-align:left}.rep-tbl th{background:#f1f5f9}.rep-zone{border:1px solid #ddd;border-radius:10px;padding:12px;margin-bottom:12px}.rep-evo{font-weight:800;font-size:18px}img{max-width:120px}</style>';
+  return css+document.getElementById('repBody').innerHTML;
+}
+function mailReport(){
+  let to=(document.getElementById('mailDest').value||'').trim()||DB.email||'';
+  if(!to){to=(prompt('Adresse email du destinataire :')||'').trim();}
+  if(!to)return;
+  if(!/.+@.+\..+/.test(to)){alert('Adresse email invalide.');return;}
+  DB.email=to;saveDB();document.getElementById('mailDest').value=to;
+  const payload=JSON.stringify({to:to,name:patName(reportPatient),html:reportHTMLForPDF()});
+  const btn=document.getElementById('repSend');if(btn){btn.textContent='Envoi…';btn.disabled=true;}
+  fetch(PDF_MAILER,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload})
+   .then(()=>{if(btn){btn.textContent='✉️ Envoyer';btn.disabled=false;}alert('✓ Dossier PDF envoyé à '+to+' !');})
+   .catch(()=>{if(btn){btn.textContent='✉️ Envoyer';btn.disabled=false;}alert('Échec de l\'envoi (réseau ?). Réessaie.');});
+}
 
 /* ===================== INIT ===================== */
 loadDB();renderPatients();show('patients');
