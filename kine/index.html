@@ -150,7 +150,8 @@
       <input type="file" id="imp" accept="application/json" class="hidden" onchange="importData(this.files[0])">
     </div>
     <div id="patientList"></div>
-    <button class="btn gray sm" style="margin:20px auto 0;display:block" onclick="openDev()">🛠️ Espace développeur</button>
+    <button class="btn sec sm" style="margin:20px auto 0;display:block" onclick="openTuto()">📖 Tutoriel</button>
+    <button class="btn gray sm" style="margin:10px auto 0;display:block" onclick="openDev()">🛠️ Espace développeur</button>
   </div>
   <button class="fab" onclick="newPatient()"><span class="p">＋</span> Patient</button>
 </div>
@@ -307,6 +308,20 @@
   </div>
 </div>
 
+<!-- ======= TUTORIEL ======= -->
+<div id="tuto" class="hidden">
+  <header><button class="back" onclick="goPatients()">‹</button><h1>📖 Tutoriel<span class="sub">Comment utiliser MobiDerm</span></h1></header>
+  <div class="wrap">
+    <div class="card"><h3 style="color:var(--teal)">① 👤 Créer un patient</h3><p class="muted" style="margin-top:6px">Sur l'accueil, appuie sur <b>＋ Patient</b>. Remplis la fiche : prénom, nom, âge, sexe, et surtout les <b>circonstances</b> (cicatrice, opération, accident…).</p></div>
+    <div class="card"><h3 style="color:var(--teal)">② 📍 Ajouter une zone</h3><p class="muted" style="margin-top:6px">Ouvre le patient → <b>＋ Zone</b>. Sur la <b>silhouette</b> (bascule <i>Vue de face / de dos</i>), <b>touche l'endroit exact</b> de la zone : le <b>nom anatomique se remplit tout seul</b> + le côté (Droit/Gauche). Tu peux ajuster, puis <b>✓ Valider</b>.</p></div>
+    <div class="card"><h3 style="color:var(--teal)">③ 📷 Prendre les mesures</h3><p class="muted" style="margin-top:6px">Dans la zone → <b>📷 Nouvelle prise</b>, puis <b>＋ Photo</b> :<br>1. Prends la photo au dermatoscope (ou via la galerie)<br>2. <b>📏 Échelle</b> : tape 2 traits de la règle mm + saisis la distance en mm<br>3. <b>⬛ Contour</b> : tape les 4 coins du carré<br>4. <b>✓ OK</b> → la surface en mm² est calculée.<br>Fais <b>2 à 3 photos</b> pour une moyenne juste.<br><i>💡 Loupe + pince pour zoomer = tu pointes au pixel près.</i></p></div>
+    <div class="card"><h3 style="color:var(--teal)">④ 📈 Voir l'évolution</h3><p class="muted" style="margin-top:6px">~3 semaines plus tard, rouvre la <b>même zone</b> → refais une <b>Nouvelle prise</b>. L'<b>évolution en %</b> entre les deux s'affiche automatiquement.</p></div>
+    <div class="card"><h3 style="color:var(--teal)">⑤ 📄 Envoyer le dossier (PDF)</h3><p class="muted" style="margin-top:6px">Sur la fiche patient → <b>📄 Exporter le dossier (PDF)</b>. L'adresse est déjà pré-remplie → appuie sur <b>✉️ Envoyer</b>. Le PDF (fiche + évolutions + photos) part direct par mail.</p></div>
+    <div class="card"><h3 style="color:var(--teal)">⑥ 🛠️ Une remarque, un bug, une idée ?</h3><p class="muted" style="margin-top:6px">Sur l'accueil → <b>Espace développeur</b> → écris ton message → <b>Envoyer à Kevin</b>. Ça lui arrive direct, il corrige.</p></div>
+    <div class="card" style="background:#ecfdf5;border:1px solid #a7f3d0"><b>💾 À savoir :</b> les données sont enregistrées <b>sur le téléphone</b>. Pense à <b>⬇︎ Sauvegarder</b> (accueil) de temps en temps pour garder une copie de secours.</div>
+  </div>
+</div>
+
 <!-- ======= MESURE ======= -->
 <div id="measure" class="hidden">
   <div id="mtop"><button onclick="closeMeasure()">✕</button><b id="mLabel">Mesure</b></div>
@@ -387,7 +402,8 @@ function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 function avg(s){if(!s.mesures.length)return null;return s.mesures.reduce((a,m)=>a+m.surface,0)/s.mesures.length;}
 function sortSess(z){return [...z.sessions].sort((a,b)=>a.date.localeCompare(b.date));}
 function zoneLabel(z){return z.nom+(z.side?' '+z.side:'');}
-function show(id){for(const s of ['patients','patient','zone','session','measure','zonePicker','dev'])document.getElementById(s).classList.toggle('hidden',s!==id);}
+function show(id){for(const s of ['patients','patient','zone','session','measure','zonePicker','dev','tuto'])document.getElementById(s).classList.toggle('hidden',s!==id);}
+function openTuto(){show('tuto');}
 
 /* ===================== PATIENTS ===================== */
 function renderPatients(){
