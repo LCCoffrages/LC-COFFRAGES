@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0d9488">
+<title>Suivi Étirement Peau</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{--teal:#0d9488;--blue:#2563eb;--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--red:#e11d48;--green:#16a34a}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);overscroll-behavior:none}
+  .hidden{display:none!important}
+  header{background:var(--teal);color:#fff;padding:13px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+  header h1{font-size:17px;font-weight:700;flex:1;line-height:1.25}
+  header .sub{font-size:12px;opacity:.85;font-weight:500;display:block}
+  header .back{font-size:26px;background:none;border:none;color:#fff;cursor:pointer;line-height:1;padding:0 4px}
+  .wrap{max-width:680px;margin:0 auto;padding:16px;padding-bottom:92px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{background:var(--teal);color:#fff;border:none;border-radius:12px;padding:13px 18px;font-size:16px;font-weight:600;width:100%;box-shadow:0 2px 6px rgba(13,148,136,.3)}
+  .btn:active{transform:translateY(1px)}
+  .btn.sec{background:#fff;color:var(--teal);border:1.5px solid var(--teal);box-shadow:none}
+  .btn.gray{background:#fff;color:var(--mut);border:1.5px solid var(--line);box-shadow:none}
+  .btn.sm{width:auto;padding:9px 14px;font-size:14px;border-radius:10px}
+  .card{background:var(--card);border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .tap{cursor:pointer}.tap:active{background:#fafafa}
+  .card h3{font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .row{display:flex;gap:10px;align-items:center}
+  .pill{font-size:13px;color:var(--mut);background:var(--bg);padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .pill.g{color:var(--green);font-weight:700}.pill.r{color:var(--red);font-weight:700}
+  .muted{color:var(--mut);font-size:14px}
+  .empty{text-align:center;color:var(--mut);padding:42px 20px}
+  .empty .big{font-size:52px;margin-bottom:10px}
+  .evoBig{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 3px 12px rgba(13,148,136,.3);display:flex;align-items:center;gap:12px}
+  .evoBig .n{font-size:30px;font-weight:800;line-height:1}
+  .evoBig .t{font-size:12px;opacity:.92}
+  .evoBig .z{font-size:15px;font-weight:700}
+  input[type=text],input[type=number],input[type=date]{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:10px;font-size:16px;font-family:inherit;background:#fff}
+  label.lbl{font-size:13px;color:var(--mut);font-weight:600;display:block;margin:2px 0 5px}
+  .sides{display:flex;gap:8px;margin-top:8px}
+  .sides button{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--mut);font-weight:700}
+  .sides button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .thumb{position:relative;width:80px}
+  .thumb img{width:80px;height:64px;object-fit:cover;border-radius:9px;border:1.5px solid var(--line)}
+  .thumb .s{font-size:12px;font-weight:700;color:var(--teal);text-align:center;margin-top:2px}
+  .thumb .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:14px;line-height:1}
+  .fab{position:fixed;right:16px;bottom:16px;height:54px;border-radius:27px;background:var(--teal);color:#fff;border:none;font-size:15px;font-weight:700;padding:0 20px;box-shadow:0 4px 14px rgba(13,148,136,.5);z-index:9;display:flex;align-items:center;gap:7px}
+  .fab .p{font-size:24px;line-height:1}
+  .topbtns{display:flex;gap:8px;margin-bottom:14px}
+  /* ===== Mesure ===== */
+  #measure{position:fixed;inset:0;background:#0b1220;z-index:50;display:flex;flex-direction:column}
+  #mtop{background:rgba(13,148,136,.96);color:#fff;padding:11px 14px;display:flex;align-items:center;gap:10px;z-index:3}
+  #mtop b{flex:1;font-size:14px;line-height:1.2}
+  #mtop button{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;padding:7px 11px;font-size:14px;font-weight:600}
+  #cvwrap{flex:1;position:relative;overflow:hidden;touch-action:none;background:#0b1220}
+  #cv{position:absolute;inset:0;width:100%;height:100%}
+  #photoChoice{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:5;padding:30px}
+  #photoChoice .pc{font-size:60px}
+  #photoChoice button{width:84%;max-width:320px;padding:16px;border-radius:14px;border:none;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px}
+  #loupe{position:absolute;top:10px;left:10px;width:128px;height:128px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.5);overflow:hidden;display:none;z-index:4;background:#000;pointer-events:none}
+  #loupe canvas{width:100%;height:100%}
+  #status{position:absolute;left:0;right:0;bottom:0;background:rgba(8,12,22,.86);color:#dbeafe;padding:11px 14px;font-size:14px;text-align:center;z-index:3;line-height:1.35}
+  #status b{color:#5eead4}
+  #mbar{background:#111a2b;padding:10px 10px;display:flex;gap:7px;z-index:3}
+  #mbar button{flex:1;border-radius:11px;padding:13px 4px;font-size:13px;font-weight:700;border:none}
+  .b-load{background:#1e293b;color:#cbd5e1}.b-scale{background:#2563eb;color:#fff}.b-poly{background:#0d9488;color:#fff}.b-ok{background:#16a34a;color:#fff}.b-undo{background:#334155;color:#cbd5e1}
+  #mbar button:disabled{opacity:.4}
+  .res{position:absolute;top:10px;right:10px;background:rgba(8,12,22,.9);color:#fff;border-radius:12px;padding:9px 13px;z-index:4;text-align:right}
+  .res .s{font-size:22px;font-weight:800;color:#5eead4}.res .l{font-size:11px;color:#94a3b8}
+  dialog{border:none;border-radius:16px;padding:20px;max-width:90%;width:360px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  dialog::backdrop{background:rgba(0,0,0,.45)}
+  dialog h3{margin-bottom:14px;font-size:17px}
+  dialog .dbtns{display:flex;gap:10px;margin-top:18px}
+</style>
+</head>
+<body>
+
+<!-- ======= PATIENTS ======= -->
+<div id="patients">
+  <header><h1>🩺 Suivi Étirement<span class="sub">Mesure de l'évolution cutanée</span></h1></header>
+  <div class="wrap">
+    <div class="topbtns">
+      <button class="btn sec sm" onclick="exportData()">⬇︎ Sauvegarder</button>
+      <button class="btn gray sm" onclick="document.getElementById('imp').click()">⬆︎ Restaurer</button>
+      <input type="file" id="imp" accept="application/json" class="hidden" onchange="importData(this.files[0])">
+    </div>
+    <div id="patientList"></div>
+  </div>
+  <button class="fab" onclick="newPatient()"><span class="p">＋</span> Patient</button>
+</div>
+
+<!-- ======= PATIENT (zones) ======= -->
+<div id="patient" class="hidden">
+  <header><button class="back" onclick="goPatients()">‹</button><h1 id="pTitle">Patient</h1><button class="back" style="font-size:19px" onclick="editPatient()">✎</button></header>
+  <div class="wrap">
+    <h3 style="margin:2px 2px 10px;font-size:14px;color:var(--mut)">ZONES SUIVIES</h3>
+    <div id="zoneList"></div>
+  </div>
+  <button class="fab" onclick="newZone()"><span class="p">＋</span> Zone</button>
+</div>
+
+<!-- ======= ZONE (prises de vue) ======= -->
+<div id="zone" class="hidden">
+  <header><button class="back" onclick="goPatient()">‹</button><h1 id="zTitle">Zone<span class="sub" id="zSub"></span></h1></header>
+  <div class="wrap">
+    <div id="zEvo"></div>
+    <h3 style="margin:4px 2px 10px;font-size:14px;color:var(--mut)">PRISES DE VUE</h3>
+    <div id="sessionList"></div>
+  </div>
+  <button class="fab" onclick="newSession()"><span class="p">📷</span> Nouvelle prise</button>
+</div>
+
+<!-- ======= SESSION (photos) ======= -->
+<div id="session" class="hidden">
+  <header><button class="back" onclick="goZone()">‹</button><h1 id="sTitle">Prise de vue<span class="sub" id="sSub"></span></h1></header>
+  <div class="wrap">
+    <div class="card">
+      <label class="lbl">Date de la prise de vue</label>
+      <input type="date" id="sDate" onchange="setDate(this.value)">
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="font-size:15px">Photos mesurées</h3>
+        <span class="pill" id="sCount">0 / 3</span>
+      </div>
+      <p class="muted" style="margin:6px 0">Prends <b>2 à 3 photos</b> de la zone → moyenne plus juste.</p>
+      <div class="thumbs" id="mesThumbs"></div>
+      <div id="sAvg" style="text-align:center;margin-top:14px"></div>
+    </div>
+    <button class="btn gray" onclick="delSession()">🗑 Supprimer cette prise de vue</button>
+  </div>
+  <button class="fab" onclick="measureNew()"><span class="p">＋</span> Photo</button>
+</div>
+
+<!-- ======= MESURE ======= -->
+<div id="measure" class="hidden">
+  <div id="mtop"><button onclick="closeMeasure()">✕</button><b id="mLabel">Mesure</b></div>
+  <div id="cvwrap">
+    <canvas id="cv"></canvas>
+    <div id="photoChoice">
+      <div class="pc">📷</div>
+      <button class="b-scale" onclick="document.getElementById('imgCam').click()">📷 Prendre une photo</button>
+      <button style="background:#1e293b;color:#cbd5e1" onclick="document.getElementById('imgGal').click()">🖼 Depuis la galerie</button>
+    </div>
+    <div id="loupe"><canvas id="lpcv" width="256" height="256"></canvas></div>
+    <div class="res hidden" id="resBox"><div class="s" id="resS">—</div><div class="l">surface mm²</div></div>
+    <div id="status" class="hidden"></div>
+  </div>
+  <div id="mbar">
+    <button class="b-load" onclick="showPhotoChoice()">↻ Photo</button>
+    <button class="b-scale" id="bScale" onclick="startScale()" disabled>📏 Échelle</button>
+    <button class="b-poly" id="bPoly" onclick="startPoly()" disabled>⬛ Contour</button>
+    <button class="b-undo" id="bUndo" onclick="undoPt()" disabled>↶</button>
+    <button class="b-ok" id="bOk" onclick="validateMeasure()" disabled>✓ OK</button>
+  </div>
+  <input type="file" id="imgCam" accept="image/*" capture="environment" class="hidden" onchange="loadImg(this.files[0])">
+  <input type="file" id="imgGal" accept="image/*" class="hidden" onchange="loadImg(this.files[0])">
+</div>
+
+<!-- datalist zones anatomiques -->
+<datalist id="zonesAnat">
+  <option value="Cervical"><option value="Trapèze"><option value="Épaule"><option value="Deltoïde"><option value="Omoplate"><option value="Bras"><option value="Biceps"><option value="Triceps"><option value="Coude"><option value="Avant-bras"><option value="Poignet"><option value="Main"><option value="Dorsal"><option value="Lombaire"><option value="Sacrum"><option value="Abdomen"><option value="Hanche"><option value="Fessier"><option value="Cuisse antérieure"><option value="Cuisse postérieure"><option value="Quadriceps"><option value="Ischio-jambiers"><option value="Genou"><option value="Rotule"><option value="Creux poplité"><option value="Mollet"><option value="Triceps sural"><option value="Tibia"><option value="Cheville"><option value="Tendon d'Achille"><option value="Pied"><option value="Cicatrice">
+</datalist>
+
+<dialog id="dlgZone">
+  <h3 id="dlgZoneT">Nouvelle zone</h3>
+  <label class="lbl">Zone du corps (terme technique)</label>
+  <input type="text" id="zName" list="zonesAnat" placeholder="ex : Genou, Tendon d'Achille…" autocomplete="off">
+  <label class="lbl" style="margin-top:12px">Côté</label>
+  <div class="sides" id="sideSel">
+    <button data-s="Droit" onclick="pickSide(this)">Droit</button>
+    <button data-s="Gauche" onclick="pickSide(this)">Gauche</button>
+    <button data-s="" onclick="pickSide(this)" class="on">Axial / —</button>
+  </div>
+  <div class="dbtns"><button class="btn gray" onclick="document.getElementById('dlgZone').close()">Annuler</button><button class="btn" onclick="confirmZone()">OK</button></div>
+</dialog>
+<dialog id="dlgMm">
+  <h3>Échelle : distance réelle</h3>
+  <p class="muted" style="margin-bottom:10px">Combien de <b>millimètres</b> séparent les 2 points placés sur la règle ?</p>
+  <input type="number" id="mmIn" step="0.1" placeholder="ex : 5" inputmode="decimal">
+  <div class="dbtns"><button class="btn gray" onclick="document.getElementById('dlgMm').close()">Annuler</button><button class="btn" onclick="confirmMm()">Valider</button></div>
+</dialog>
+<dialog id="dlgPat">
+  <h3 id="dlgPatT">Nouveau patient</h3>
+  <input type="text" id="patName" placeholder="Nom du patient (ex : Patient A)">
+  <div class="dbtns"><button class="btn gray" onclick="document.getElementById('dlgPat').close()">Annuler</button><button class="btn" onclick="confirmPatient()">OK</button></div>
+</dialog>
+
+<script>
+/* ===================== DONNÉES ===================== */
+const LS='kine_etirement_v3';
+let DB={patients:[]};
+let curPid=null, curZid=null, curSid=null, editPat=false, editZone=false, pickedSide='';
+function loadDB(){try{const r=localStorage.getItem(LS);if(r)DB=JSON.parse(r);}catch(e){}}
+function saveDB(){try{localStorage.setItem(LS,JSON.stringify(DB));}catch(e){alert('Mémoire pleine — fais "Sauvegarder" puis supprime d\'anciennes données.');}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function P(){return DB.patients.find(p=>p.id===curPid);}
+function Z(){const p=P();return p&&p.zones.find(z=>z.id===curZid);}
+function S(){const z=Z();return z&&z.sessions.find(s=>s.id===curSid);}
+function esc(s){return (s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+function frDate(iso){return new Date(iso+'T00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}
+function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function avg(s){if(!s.mesures.length)return null;return s.mesures.reduce((a,m)=>a+m.surface,0)/s.mesures.length;}
+function sortSess(z){return [...z.sessions].sort((a,b)=>a.date.localeCompare(b.date));}
+function zoneLabel(z){return z.nom+(z.side?' '+z.side:'');}
+function show(id){for(const s of ['patients','patient','zone','session','measure'])document.getElementById(s).classList.toggle('hidden',s!==id);}
+
+/* ===================== PATIENTS ===================== */
+function renderPatients(){
+  const el=document.getElementById('patientList');
+  if(!DB.patients.length){el.innerHTML='<div class="empty"><div class="big">👤</div>Aucun patient.<br>Appuie sur <b>＋ Patient</b>.</div>';return;}
+  el.innerHTML=DB.patients.map(p=>`<div class="card tap" onclick="openPatient('${p.id}')"><h3>${esc(p.nom)}<span class="pill">${p.zones.length} zone(s)</span></h3></div>`).join('');
+}
+function newPatient(){editPat=false;document.getElementById('dlgPatT').textContent='Nouveau patient';document.getElementById('patName').value='';document.getElementById('dlgPat').showModal();setTimeout(()=>document.getElementById('patName').focus(),100);}
+function editPatient(){editPat=true;document.getElementById('dlgPatT').textContent='Renommer le patient';document.getElementById('patName').value=P().nom;document.getElementById('dlgPat').showModal();}
+function confirmPatient(){const n=document.getElementById('patName').value.trim();if(!n)return;if(editPat){P().nom=n;saveDB();document.getElementById('dlgPat').close();renderPatient();}else{const p={id:uid(),nom:n,zones:[]};DB.patients.unshift(p);saveDB();document.getElementById('dlgPat').close();openPatient(p.id);}}
+function goPatients(){show('patients');renderPatients();}
+
+/* ===================== PATIENT (zones) ===================== */
+function openPatient(id){curPid=id;renderPatient();show('patient');}
+function renderPatient(){
+  const p=P();document.getElementById('pTitle').textContent=p.nom;
+  const el=document.getElementById('zoneList');
+  if(!p.zones.length){el.innerHTML='<div class="empty"><div class="big">📍</div>Aucune zone.<br>Appuie sur <b>＋ Zone</b> (ex : Genou Droit).</div>';return;}
+  el.innerHTML=p.zones.map(z=>{
+    const ss=sortSess(z).filter(s=>avg(s)!=null);
+    let evo='<span class="pill">'+z.sessions.length+' prise(s)</span>';
+    if(ss.length>=2){const a=avg(ss[0]),b=avg(ss[ss.length-1]);const v=(b-a)/a*100;evo=`<span class="pill ${v>=0?'g':'r'}">${v>=0?'+':''}${v.toFixed(1)} %</span>`;}
+    return `<div class="card tap" onclick="openZone('${z.id}')"><h3>📍 ${esc(zoneLabel(z))} ${evo}</h3>
+      <div class="muted" style="font-size:13px;margin-top:4px">${z.sessions.length} prise(s) de vue</div></div>`;
+  }).join('');
+}
+function newZone(){editZone=false;document.getElementById('dlgZoneT').textContent='Nouvelle zone';document.getElementById('zName').value='';pickSideVal('');document.getElementById('dlgZone').showModal();setTimeout(()=>document.getElementById('zName').focus(),100);}
+function editZoneOpen(){editZone=true;document.getElementById('dlgZoneT').textContent='Modifier la zone';document.getElementById('zName').value=Z().nom;pickSideVal(Z().side||'');document.getElementById('dlgZone').showModal();}
+function pickSide(btn){document.querySelectorAll('#sideSel button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pickedSide=btn.dataset.s;}
+function pickSideVal(v){pickedSide=v;document.querySelectorAll('#sideSel button').forEach(b=>b.classList.toggle('on',b.dataset.s===v));}
+function confirmZone(){const n=document.getElementById('zName').value.trim();if(!n)return;if(editZone){Z().nom=n;Z().side=pickedSide;saveDB();document.getElementById('dlgZone').close();renderZone();}else{const z={id:uid(),nom:n,side:pickedSide,sessions:[]};P().zones.push(z);saveDB();document.getElementById('dlgZone').close();openZone(z.id);}}
+function goPatient(){show('patient');renderPatient();}
+
+/* ===================== ZONE (prises de vue) ===================== */
+function openZone(id){curZid=id;renderZone();show('zone');}
+function renderZone(){
+  const z=Z();document.getElementById('zTitle').firstChild.textContent='';
+  document.getElementById('zTitle').childNodes[0].nodeValue=zoneLabel(z)+' ';
+  document.getElementById('zSub').textContent=P().nom;
+  const ss=sortSess(z),meas=ss.filter(s=>avg(s)!=null);
+  const evoEl=document.getElementById('zEvo');
+  if(meas.length>=2){const a=avg(meas[0]),b=avg(meas[meas.length-1]);const v=(b-a)/a*100;
+    evoEl.innerHTML=`<div class="evoBig"><div class="n">${v>=0?'+':''}${v.toFixed(1)}%</div><div><div class="z">Évolution de la surface</div><div class="t">${frDate(meas[0].date)} → ${frDate(meas[meas.length-1].date)} · ${a.toFixed(1)} → ${b.toFixed(1)} mm²</div></div></div>`;}
+  else evoEl.innerHTML=meas.length?'<div class="card muted" style="text-align:center">Refais une prise (dans ~3 semaines) pour voir l\'évolution.</div>':'';
+  const el=document.getElementById('sessionList');
+  if(!z.sessions.length){el.innerHTML='<div class="empty"><div class="big">📷</div>Aucune prise de vue.<br>Appuie sur <b>📷 Nouvelle prise</b>.</div>';return;}
+  const desc=[...ss].reverse();
+  el.innerHTML=desc.map(s=>{
+    const idx=ss.indexOf(s),m=avg(s);let delta='';
+    if(idx>0){const pa=avg(ss[idx-1]);if(pa&&m){const v=(m-pa)/pa*100;delta=`<span class="pill ${v>=0?'g':'r'}">${v>=0?'+':''}${v.toFixed(1)} %</span>`;}}
+    return `<div class="card tap" onclick="openSession('${s.id}')"><h3 style="font-size:15px">📅 ${frDate(s.date)} ${delta}</h3>
+      <div class="muted" style="font-size:13px;margin-top:4px">${m?('Moyenne <b>'+m.toFixed(1)+' mm²</b> · '+s.mesures.length+' photo(s)'):'aucune mesure'}</div></div>`;
+  }).join('');
+}
+
+/* ===================== SESSION ===================== */
+function newSession(){const z=Z();const s={id:uid(),date:todayISO(),mesures:[]};z.sessions.push(s);saveDB();openSession(s.id);}
+function openSession(id){curSid=id;renderSession();show('session');}
+function goZone(){show('zone');renderZone();}
+function setDate(v){if(v){S().date=v;saveDB();}}
+function renderSession(){
+  const s=S();
+  document.getElementById('sTitle').childNodes[0].nodeValue='Prise du '+frDate(s.date)+' ';
+  document.getElementById('sSub').textContent=P().nom+' · '+zoneLabel(Z());
+  document.getElementById('sDate').value=s.date;
+  document.getElementById('sCount').textContent=s.mesures.length+' / 3';
+  document.getElementById('mesThumbs').innerHTML=s.mesures.map((m,i)=>`<div class="thumb"><button class="x" onclick="delMes(${i})">×</button><img src="${m.thumb}"><div class="s">${m.surface.toFixed(1)}</div></div>`).join('')||'<span class="muted">Aucune photo mesurée</span>';
+  const m=avg(s);
+  document.getElementById('sAvg').innerHTML=m?`<div class="muted" style="font-size:13px">Surface moyenne</div><div style="font-size:30px;font-weight:800;color:var(--teal)">${m.toFixed(1)} mm²</div>`:'';
+}
+function delMes(i){if(confirm('Supprimer cette mesure ?')){S().mesures.splice(i,1);saveDB();renderSession();}}
+function delSession(){if(confirm('Supprimer cette prise de vue ?')){const z=Z();z.sessions=z.sessions.filter(x=>x.id!==curSid);saveDB();goZone();}}
+
+/* ===================== MESURE ===================== */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const lp=document.getElementById('loupe'),lpcv=document.getElementById('lpcv'),lpx=lpcv.getContext('2d');
+let img=null, view={s:1,tx:0,ty:0}, mode='idle', scalePts=[], polyPts=[], pxPerMm=null, drag=null;
+function measureNew(){
+  if(S().mesures.length>=3 && !confirm('Déjà 3 photos (recommandé). En ajouter une autre ?'))return;
+  mode='idle';img=null;scalePts=[];polyPts=[];pxPerMm=null;drag=null;
+  document.getElementById('mLabel').textContent=P().nom+' · '+zoneLabel(Z())+' — photo '+(S().mesures.length+1);
+  resetButtons();document.getElementById('resBox').classList.add('hidden');
+  showPhotoChoice();show('measure');
+}
+function showPhotoChoice(){document.getElementById('photoChoice').classList.remove('hidden');document.getElementById('status').classList.add('hidden');}
+function resetButtons(){
+  document.getElementById('bScale').disabled=!img;
+  document.getElementById('bPoly').disabled=!(img&&pxPerMm);
+  document.getElementById('bUndo').disabled=!((mode==='scale'&&scalePts.length)||(mode==='poly'&&polyPts.length));
+  document.getElementById('bOk').disabled=!(pxPerMm&&polyPts.length>=3);
+}
+function setStatus(h){const s=document.getElementById('status');s.classList.remove('hidden');s.innerHTML=h;}
+function loadImg(file){if(!file)return;const r=new FileReader();r.onload=e=>loadImgSrc(e.target.result);r.readAsDataURL(file);}
+function loadImgSrc(src){
+  const im=new Image();
+  im.onload=()=>{
+    document.getElementById('photoChoice').classList.add('hidden');
+    const max=1400,sc=Math.min(1,max/Math.max(im.width,im.height));
+    const c=document.createElement('canvas');c.width=im.width*sc;c.height=im.height*sc;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    img={el:c,w:c.width,h:c.height};
+    fitView();scalePts=[];polyPts=[];pxPerMm=null;resetButtons();document.getElementById('resBox').classList.add('hidden');
+    setStatus('Appuie sur <b>📏 Échelle</b> et cale la règle mm.');draw();
+  };im.src=src;
+}
+function fitView(){resizeCanvas();const s=Math.min(cv.clientWidth/img.w,cv.clientHeight/img.h)*.96;view.s=s;view.tx=(cv.clientWidth-img.w*s)/2;view.ty=(cv.clientHeight-img.h*s)/2;}
+function resizeCanvas(){const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);}
+function toScreen(p){return{x:p.x*view.s+view.tx,y:p.y*view.s+view.ty};}
+function toImg(x,y){return{x:(x-view.tx)/view.s,y:(y-view.ty)/view.s};}
+function draw(){
+  if(!img)return;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);ctx.clearRect(0,0,cv.clientWidth,cv.clientHeight);
+  ctx.imageSmoothingQuality='high';ctx.drawImage(img.el,view.tx,view.ty,img.w*view.s,img.h*view.s);
+  if(scalePts.length){ctx.strokeStyle='#2563eb';ctx.lineWidth=2;if(scalePts.length===2){const a=toScreen(scalePts[0]),b=toScreen(scalePts[1]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}scalePts.forEach(p=>dot(toScreen(p),'#2563eb'));}
+  if(polyPts.length){const pts=polyPts.map(toScreen);ctx.strokeStyle='#14b8a6';ctx.fillStyle='rgba(20,184,166,.18)';ctx.lineWidth=2;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));if(mode!=='poly'||polyPts.length>=3)ctx.closePath();ctx.fill();ctx.stroke();pts.forEach(p=>dot(p,'#14b8a6'));}
+}
+function dot(p,c){ctx.beginPath();ctx.arc(p.x,p.y,7,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,5,0,7);ctx.fillStyle=c;ctx.fill();}
+function startScale(){mode='scale';scalePts=[];pxPerMm=null;document.getElementById('resBox').classList.add('hidden');resetButtons();setStatus('Tape <b>2 points</b> sur la règle, à une distance connue (ex : 0 et 5 mm).');draw();}
+function startPoly(){if(!pxPerMm){setStatus('Cale d\'abord l\'échelle 📏');return;}mode='poly';polyPts=[];document.getElementById('resBox').classList.add('hidden');resetButtons();setStatus('Tape les <b>4 coins du carré</b>, puis <b>✓ OK</b>. (↶ = corriger)');draw();}
+function undoPt(){if(mode==='scale'&&scalePts.length)scalePts.pop();else if(mode==='poly'&&polyPts.length)polyPts.pop();if(mode==='poly')computeArea();resetButtons();draw();}
+function placePoint(ix,iy){const p=toImg(ix,iy);if(mode==='scale'){if(scalePts.length<2){scalePts.push(p);if(scalePts.length===2)askMm();}}else if(mode==='poly'){polyPts.push(p);computeArea();}resetButtons();draw();}
+function askMm(){document.getElementById('mmIn').value='';document.getElementById('dlgMm').showModal();setTimeout(()=>document.getElementById('mmIn').focus(),100);}
+function confirmMm(){const mm=parseFloat(document.getElementById('mmIn').value);if(!mm||mm<=0)return;const d=Math.hypot(scalePts[0].x-scalePts[1].x,scalePts[0].y-scalePts[1].y);pxPerMm=d/mm;document.getElementById('dlgMm').close();mode='idle';resetButtons();setStatus('Échelle OK ✓. Appuie sur <b>⬛ Contour</b> pour entourer le carré.');draw();}
+function polyAreaPx(){if(polyPts.length<3)return 0;const cx=polyPts.reduce((s,p)=>s+p.x,0)/polyPts.length,cy=polyPts.reduce((s,p)=>s+p.y,0)/polyPts.length;const o=[...polyPts].sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));let A=0;for(let i=0;i<o.length;i++){const j=(i+1)%o.length;A+=o[i].x*o[j].y-o[j].x*o[i].y;}return Math.abs(A)/2;}
+function computeArea(){if(!pxPerMm||polyPts.length<3){document.getElementById('resBox').classList.add('hidden');return null;}const mm2=polyAreaPx()/(pxPerMm*pxPerMm);document.getElementById('resBox').classList.remove('hidden');document.getElementById('resS').textContent=mm2.toFixed(1);document.getElementById('bOk').disabled=false;return mm2;}
+function validateMeasure(){const mm2=computeArea();if(!mm2){setStatus('Il faut l\'échelle + 3 coins minimum.');return;}const t=document.createElement('canvas');t.width=200;t.height=150;const s=Math.min(200/img.w,150/img.h);t.getContext('2d').drawImage(img.el,(200-img.w*s)/2,(150-img.h*s)/2,img.w*s,img.h*s);S().mesures.push({surface:mm2,thumb:t.toDataURL('image/jpeg',.65)});saveDB();closeMeasure();renderSession();}
+function closeMeasure(){show('session');}
+
+/* ===== interactions ===== */
+const wrap=document.getElementById('cvwrap');
+let touch={mode:null,sx:0,sy:0,moved:false,startView:null,pinch:null};
+const HIT=22;
+function findPoint(x,y){const all=[...scalePts.map((p,i)=>({arr:'s',i,p})),...polyPts.map((p,i)=>({arr:'p',i,p}))];for(const it of all){const s=toScreen(it.p);if(Math.hypot(s.x-x,s.y-y)<HIT)return it;}return null;}
+function evtXY(e,i=0){const r=cv.getBoundingClientRect();const t=e.touches?e.touches[i]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
+wrap.addEventListener('touchstart',e=>{if(!img)return;if(e.touches.length===2){const a=evtXY(e,0),b=evtXY(e,1);touch.mode='pinch';touch.pinch={d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,sv:{...view}};drag=null;hideLoupe();return;}const p=evtXY(e);touch.sx=p.x;touch.sy=p.y;touch.moved=false;touch.startView={...view};const hit=findPoint(p.x,p.y);if(hit){drag=hit;touch.mode='drag';showLoupe(p.x,p.y);}else{drag=null;touch.mode='maybe';}},{passive:false});
+wrap.addEventListener('touchmove',e=>{if(!img)return;e.preventDefault();if(touch.mode==='pinch'&&e.touches.length>=2){const a=evtXY(e,0),b=evtXY(e,1);const d=Math.hypot(a.x-b.x,a.y-b.y);const sv=touch.pinch.sv;const ns=Math.max(.2,Math.min(12,sv.s*d/touch.pinch.d));const cx=touch.pinch.cx,cy=touch.pinch.cy;view.s=ns;view.tx=cx-(cx-sv.tx)*(ns/sv.s);view.ty=cy-(cy-sv.ty)*(ns/sv.s);draw();return;}const p=evtXY(e);if(touch.mode==='drag'&&drag){const im=toImg(p.x,p.y);(drag.arr==='s'?scalePts:polyPts)[drag.i]={x:im.x,y:im.y};showLoupe(p.x,p.y);if(drag.arr==='p')computeArea();draw();return;}if(Math.hypot(p.x-touch.sx,p.y-touch.sy)>6)touch.moved=true;if(touch.mode==='maybe'&&touch.moved)touch.mode='pan';if(touch.mode==='pan'){view.tx=touch.startView.tx+(p.x-touch.sx);view.ty=touch.startView.ty+(p.y-touch.sy);draw();}},{passive:false});
+wrap.addEventListener('touchend',e=>{if(!img)return;hideLoupe();if(touch.mode==='maybe'&&!touch.moved)placePoint(touch.sx,touch.sy);touch.mode=null;drag=null;},{passive:false});
+let mdown=false;
+wrap.addEventListener('mousedown',e=>{if(!img)return;const p=evtXY(e);mdown=true;touch.sx=p.x;touch.sy=p.y;touch.moved=false;touch.startView={...view};const hit=findPoint(p.x,p.y);if(hit){drag=hit;touch.mode='drag';showLoupe(p.x,p.y);}else{drag=null;touch.mode='maybe';}});
+wrap.addEventListener('mousemove',e=>{if(!img||!mdown)return;const p=evtXY(e);if(touch.mode==='drag'&&drag){const im=toImg(p.x,p.y);(drag.arr==='s'?scalePts:polyPts)[drag.i]={x:im.x,y:im.y};showLoupe(p.x,p.y);if(drag.arr==='p')computeArea();draw();return;}if(Math.hypot(p.x-touch.sx,p.y-touch.sy)>6)touch.moved=true;if(touch.mode==='maybe'&&touch.moved)touch.mode='pan';if(touch.mode==='pan'){view.tx=touch.startView.tx+(p.x-touch.sx);view.ty=touch.startView.ty+(p.y-touch.sy);draw();}});
+wrap.addEventListener('mouseup',e=>{if(!img)return;mdown=false;hideLoupe();if(touch.mode==='maybe'&&!touch.moved)placePoint(touch.sx,touch.sy);touch.mode=null;drag=null;});
+wrap.addEventListener('wheel',e=>{if(!img)return;e.preventDefault();const p=evtXY(e);const k=e.deltaY<0?1.12:.89;const ns=Math.max(.2,Math.min(12,view.s*k));view.tx=p.x-(p.x-view.tx)*(ns/view.s);view.ty=p.y-(p.y-view.ty)*(ns/view.s);view.s=ns;draw();},{passive:false});
+function showLoupe(x,y){if(!img)return;lp.style.display='block';lp.style.left=(x<150?'auto':'10px');lp.style.right=(x<150?'10px':'auto');const im=toImg(x,y);const src=32;lpx.clearRect(0,0,256,256);lpx.imageSmoothingEnabled=true;lpx.drawImage(img.el,im.x-src/2,im.y-src/2,src,src,0,0,256,256);lpx.strokeStyle='rgba(94,234,212,.95)';lpx.lineWidth=2;lpx.beginPath();lpx.moveTo(128,98);lpx.lineTo(128,158);lpx.moveTo(98,128);lpx.lineTo(158,128);lpx.stroke();lpx.beginPath();lpx.arc(128,128,5,0,7);lpx.strokeStyle='#fff';lpx.stroke();}
+function hideLoupe(){lp.style.display='none';}
+window.addEventListener('resize',()=>{if(img&&!document.getElementById('measure').classList.contains('hidden')){resizeCanvas();draw();}});
+
+/* ===================== EXPORT / IMPORT ===================== */
+function exportData(){const blob=new Blob([JSON.stringify(DB)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='suivi_etirement_'+todayISO()+'.json';a.click();}
+function importData(file){if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.patients){DB=d;saveDB();renderPatients();alert('Données restaurées ✓');}}catch(err){alert('Fichier invalide');}};r.readAsText(file);}
+
+/* ===================== INIT ===================== */
+loadDB();renderPatients();show('patients');
+</script>
+</body>
+</html>
