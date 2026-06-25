@@ -1,7 +1,7 @@
 {
   "name": "MobiDerm",
   "short_name": "MobiDerm",
-  "description": "Suivi de l'élasticité cutanée — by Johann Banon",
+  "description": "Suivi de l'élasticité cutanée — by Professeur Johann Banon",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
