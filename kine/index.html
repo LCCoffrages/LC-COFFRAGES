@@ -312,7 +312,24 @@
 <div id="tuto" class="hidden">
   <header><button class="back" onclick="goPatients()">‹</button><h1>📖 Tutoriel<span class="sub">Comment utiliser MobiDerm</span></h1></header>
   <div class="wrap">
-    <div id="tutoContent" class="muted" style="text-align:center;padding:40px 16px">Tutoriel à venir…</div>
+    <div id="tutoContent">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+        <div style="flex:1;min-width:230px;background:#fdf2f4;border:1px solid #f5d0d7;border-radius:14px;padding:16px">
+          <div style="font-size:12px;font-weight:800;letter-spacing:.06em;color:#be123c;margin-bottom:8px">✏️ AUJOURD'HUI</div>
+          <p style="color:#475569;font-size:14px;line-height:1.5;margin:0">Le repère au crayon s'efface en 3 semaines. La mesure dépend de l'œil et de la main. Impossible de comparer précisément deux dates.</p>
+        </div>
+        <div style="flex:1;min-width:230px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:16px">
+          <div style="font-size:12px;font-weight:800;letter-spacing:.06em;color:#047857;margin-bottom:8px">🔬 AVEC LE SCANNER</div>
+          <p style="color:#475569;font-size:14px;line-height:1.5;margin:0">Un passage capture la cicatrice elle-même. Un carré de calibration donne l'échelle réelle, un grain de beauté sert de repère fixe. Comparaison chiffrée à chaque visite.</p>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 14px">
+        <div><div style="font-size:24px">📏</div><div style="font-weight:800;margin-top:4px;color:var(--teal-d)">Surface</div><div class="muted" style="font-size:13px;line-height:1.4">En mm². Suit le rétrécissement de la cicatrice dans le temps.</div></div>
+        <div><div style="font-size:24px">🎨</div><div style="font-weight:800;margin-top:4px;color:var(--teal-d)">Couleur</div><div class="muted" style="font-size:13px;line-height:1.4">La rougeur qui s'atténue = cicatrice qui mûrit.</div></div>
+        <div><div style="font-size:24px">🔺</div><div style="font-weight:800;margin-top:4px;color:var(--teal-d)">Relief 3D</div><div class="muted" style="font-size:13px;line-height:1.4">Mesure le volume. Une adhérence qui s'aplatit = amélioration.</div></div>
+        <div><div style="font-size:24px">🌡️</div><div style="font-weight:800;margin-top:4px;color:var(--teal-d)">Température</div><div class="muted" style="font-size:13px;line-height:1.4">Une zone plus chaude signale une inflammation active.</div></div>
+      </div>
+    </div>
   </div>
 </div>
 
