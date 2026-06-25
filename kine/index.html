@@ -137,12 +137,12 @@
     <g class="tk" stroke="#fff" stroke-width="7" stroke-linecap="round"><line x1="190" y1="362" x2="190" y2="386"/><line x1="223" y1="362" x2="223" y2="378"/><line x1="256" y1="362" x2="256" y2="386"/><line x1="289" y1="362" x2="289" y2="378"/><line x1="322" y1="362" x2="322" y2="386"/></g>
   </svg>
   <div class="st">MobiDerm</div>
-  <div class="ss">by Johann Banon</div>
+  <div class="ss">by Professeur Johann Banon</div>
 </div>
 
 <!-- ======= PATIENTS ======= -->
 <div id="patients">
-  <header><h1>MobiDerm<span class="sub">by Johann Banon</span></h1></header>
+  <header><h1>MobiDerm<span class="sub">by Professeur Johann Banon</span></h1></header>
   <div class="wrap">
     <div class="topbtns">
       <button class="btn sec sm" onclick="exportData()">⬇︎ Sauvegarder</button>
@@ -607,7 +607,7 @@ function genReport(p){
     ss.forEach(s=>{if(s.mesures&&s.mesures.length){h+=`<div style="margin-top:10px;font-size:12px;color:#475569"><b>${frDate(s.date)}</b> — photos mesurées :</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">`+s.mesures.map(m=>`<div style="text-align:center"><img src="${m.thumb}" style="width:96px;height:72px;object-fit:cover;border:1px solid #e2e8f0;border-radius:6px"><div style="font-size:10px;color:#64748b">${m.surface.toFixed(1)} mm²</div></div>`).join('')+'</div>';}});
     h+='</div>';
   });
-  h+='</div><div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:22px;border-top:1px solid #e2e8f0;padding-top:12px">MobiDerm — by Johann Banon</div>';
+  h+='</div><div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:22px;border-top:1px solid #e2e8f0;padding-top:12px">MobiDerm — by Professeur Johann Banon</div>';
   return h;
 }
 const PDF_MAILER='https://script.google.com/macros/s/AKfycbxoS-8KXa67rC0xQ_ViPBA8DBbDP7PZtbmlgocyB9aD8UDtrvO1JsUxUwmfo0MfCPENmQ/exec';
