@@ -1,7 +1,7 @@
 {
   "name": "MobiDerm",
   "short_name": "MobiDerm",
-  "description": "Suivi de l'élasticité cutanée — Professeur Johan Legon",
+  "description": "Suivi de l'élasticité cutanée — by Professeur Johan Legon",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
