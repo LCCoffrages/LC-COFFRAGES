@@ -101,6 +101,7 @@
   <div class="wrap">
     <h3 style="margin:2px 2px 10px;font-size:14px;color:var(--mut)">ZONES SUIVIES</h3>
     <div id="zoneList"></div>
+    <button class="btn gray" onclick="delPatient()" style="margin-top:16px">🗑 Supprimer ce patient</button>
   </div>
   <button class="fab" onclick="newZone()"><span class="p">＋</span> Zone</button>
 </div>
@@ -221,6 +222,7 @@ function newPatient(){editPat=false;document.getElementById('dlgPatT').textConte
 function editPatient(){editPat=true;document.getElementById('dlgPatT').textContent='Renommer le patient';document.getElementById('patName').value=P().nom;document.getElementById('dlgPat').showModal();}
 function confirmPatient(){const n=document.getElementById('patName').value.trim();if(!n)return;if(editPat){P().nom=n;saveDB();document.getElementById('dlgPat').close();renderPatient();}else{const p={id:uid(),nom:n,zones:[]};DB.patients.unshift(p);saveDB();document.getElementById('dlgPat').close();openPatient(p.id);}}
 function goPatients(){show('patients');renderPatients();}
+function delPatient(){if(confirm('Supprimer ce patient et TOUTES ses zones / prises de vue ?')){DB.patients=DB.patients.filter(p=>p.id!==curPid);saveDB();goPatients();}}
 
 /* ===================== PATIENT (zones) ===================== */
 function openPatient(id){curPid=id;renderPatient();show('patient');}
