@@ -161,7 +161,8 @@
     <div id="pInfo"></div>
     <h3 style="margin:2px 2px 10px;font-size:14px;color:var(--mut)">ZONES SUIVIES</h3>
     <div id="zoneList"></div>
-    <button class="btn gray" onclick="delPatient()" style="margin-top:16px">🗑 Supprimer ce patient</button>
+    <button class="btn sec" onclick="exportPDF()" style="margin-top:16px">📄 Exporter le dossier (PDF)</button>
+    <button class="btn gray" onclick="delPatient()" style="margin-top:10px">🗑 Supprimer ce patient</button>
   </div>
   <button class="fab" onclick="newZone()"><span class="p">＋</span> Zone</button>
 </div>
@@ -317,6 +318,21 @@
   <input type="file" id="imgGal" accept="image/*" class="hidden" onchange="loadImg(this.files[0])">
 </div>
 
+<!-- ======= RAPPORT / PDF ======= -->
+<div id="report" class="hidden">
+  <div class="rep-bar noprint">
+    <button onclick="closeReport()">✕</button>
+    <span class="sp"></span>
+    <button onclick="window.print()">🖨️ Enregistrer / PDF</button>
+    <button onclick="mailReport()">✉️ Mail</button>
+  </div>
+  <div class="rep-mail noprint">
+    <span style="font-size:13px;color:#475569">Email destinataire :</span>
+    <input id="mailDest" type="email" inputmode="email" placeholder="adresse@mail.fr" oninput="DB.email=this.value;saveDB()">
+  </div>
+  <div id="repBody"></div>
+</div>
+
 <!-- datalist zones anatomiques -->
 <datalist id="zonesAnat">
   <option value="Cervical"><option value="Trapèze"><option value="Épaule"><option value="Deltoïde"><option value="Omoplate"><option value="Bras"><option value="Biceps"><option value="Triceps"><option value="Coude"><option value="Avant-bras"><option value="Poignet"><option value="Main"><option value="Dorsal"><option value="Lombaire"><option value="Sacrum"><option value="Abdomen"><option value="Hanche"><option value="Fessier"><option value="Cuisse antérieure"><option value="Cuisse postérieure"><option value="Quadriceps"><option value="Ischio-jambiers"><option value="Genou"><option value="Rotule"><option value="Creux poplité"><option value="Mollet"><option value="Triceps sural"><option value="Tibia"><option value="Cheville"><option value="Tendon d'Achille"><option value="Pied"><option value="Cicatrice">
@@ -400,10 +416,23 @@ function renderPatient(){
 }
 let curView='front', pinXY=null, figDown=false;
 function setFig(){const sx=((P()&&P().sexe)==='F')?'female':'male';document.getElementById('figImg').src=sx+'-'+curView+'.png';}
-function showPin(xy){pinXY=xy;const pin=document.getElementById('pin');if(!xy){pin.classList.add('hidden');return;}pin.classList.remove('hidden');pin.style.left=(xy.x*100)+'%';pin.style.top=(xy.y*100)+'%';}
+function regionAt(x,y,view){const back=view==='back';const off=Math.abs(x-0.5);const sLR=(x<0.5)?(back?'Gauche':'Droit'):(back?'Droit':'Gauche');const arm=off>0.17;
+  if(y<0.085)return{nom:'Tête',side:''};
+  if(y<0.13)return{nom:'Cervical',side:''};
+  if(arm&&y<0.42){const n=y<0.18?'Épaule':y<0.30?'Bras':y<0.34?'Coude':'Avant-bras';return{nom:n,side:sLR};}
+  if(arm&&y<0.50)return{nom:'Main',side:sLR};
+  if(y<0.30)return{nom:back?'Dorsal':'Thorax',side:''};
+  if(y<0.42)return{nom:back?'Lombaire':'Abdomen',side:''};
+  if(y<0.50)return back?{nom:'Fessier',side:sLR}:{nom:'Hanche',side:sLR};
+  if(y<0.68)return{nom:back?'Ischio-jambiers':'Cuisse',side:sLR};
+  if(y<0.74)return{nom:back?'Creux poplité':'Genou',side:sLR};
+  if(y<0.90)return{nom:back?'Mollet':'Tibia',side:sLR};
+  if(y<0.95)return{nom:back?"Tendon d'Achille":'Cheville',side:sLR};
+  return{nom:back?'Talon':'Pied',side:sLR};}
+function showPin(xy,auto){pinXY=xy;const pin=document.getElementById('pin');if(!xy){pin.classList.add('hidden');return;}pin.classList.remove('hidden');pin.style.left=(xy.x*100)+'%';pin.style.top=(xy.y*100)+'%';if(auto!==false){const r=regionAt(xy.x,xy.y,curView);document.getElementById('zName2').value=r.nom;pickSideVal2(r.side);}}
 function newZone(){editZone=false;document.getElementById('zpTitle').textContent='Nouvelle zone';document.getElementById('zName2').value='';pickSideVal2('');curView='front';showPin(null);setFig();switchBody('front');show('zonePicker');}
-function editZoneOpen(){editZone=true;document.getElementById('zpTitle').textContent='Modifier la zone';const z=Z();document.getElementById('zName2').value=z.nom;pickSideVal2(z.side||'');curView=z.view||'front';setFig();showPin(z.px!=null?{x:z.px,y:z.py}:null);switchBody(curView);show('zonePicker');}
-function switchBody(v){curView=v;setFig();document.getElementById('segF').classList.toggle('on',v==='front');document.getElementById('segB').classList.toggle('on',v==='back');document.getElementById('bodyHint').textContent=(v==='front'?"👆 Touche l'endroit exact (vue de FACE)":"👆 Touche l'endroit exact (vue de DOS)");}
+function editZoneOpen(){editZone=true;document.getElementById('zpTitle').textContent='Modifier la zone';const z=Z();document.getElementById('zName2').value=z.nom;pickSideVal2(z.side||'');curView=z.view||'front';setFig();showPin(z.px!=null?{x:z.px,y:z.py}:null,false);switchBody(curView);show('zonePicker');}
+function switchBody(v){curView=v;setFig();document.getElementById('segF').classList.toggle('on',v==='front');document.getElementById('segB').classList.toggle('on',v==='back');document.getElementById('bodyHint').textContent=(v==='front'?"👆 Touche la zone → le nom se remplit (FACE)":"👆 Touche la zone → le nom se remplit (DOS)");}
 function pickSide2(btn){document.querySelectorAll('#sideSel2 button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pickedSide=btn.dataset.s;}
 function pickSideVal2(v){pickedSide=v;document.querySelectorAll('#sideSel2 button').forEach(b=>b.classList.toggle('on',b.dataset.s===v));}
 function cancelZonePick(){if(editZone)goZone();else goPatient();}
@@ -530,6 +559,33 @@ window.addEventListener('resize',()=>{if(img&&!document.getElementById('measure'
 /* ===================== EXPORT / IMPORT ===================== */
 function exportData(){const blob=new Blob([JSON.stringify(DB)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='suivi_etirement_'+todayISO()+'.json';a.click();}
 function importData(file){if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.patients){DB=d;saveDB();renderPatients();alert('Données restaurées ✓');}}catch(err){alert('Fichier invalide');}};r.readAsText(file);}
+
+/* ===================== RAPPORT / PDF ===================== */
+let reportPatient=null;
+function exportPDF(){reportPatient=P();document.getElementById('mailDest').value=DB.email||'';document.getElementById('repBody').innerHTML=genReport(P());const r=document.getElementById('report');r.classList.remove('hidden');r.scrollTop=0;}
+function closeReport(){document.getElementById('report').classList.add('hidden');}
+function genReport(p){
+  const now=new Date().toLocaleDateString('fr-FR');
+  let h=`<div class="rep-h"><span class="lg">MobiDerm</span><div style="flex:1"></div><div style="font-size:12px;color:#64748b;text-align:right">Dossier édité le ${now}</div></div>`;
+  h+=`<div class="rep-sec"><h4>PATIENT</h4><div style="font-size:19px;font-weight:800">${esc(patName(p))}</div>`;
+  const meta=[p.age?p.age+' ans':'',p.sexe==='H'?'Homme':(p.sexe==='F'?'Femme':'')].filter(Boolean).join(' · ');
+  if(meta)h+=`<div style="color:#475569;margin-top:2px">${esc(meta)}</div>`;
+  if(p.circ)h+=`<div style="margin-top:8px"><b>Circonstances :</b> ${esc(p.circ)}</div>`;
+  if(p.notes)h+=`<div style="margin-top:6px"><b>Notes :</b> ${esc(p.notes)}</div>`;
+  h+=`</div><div class="rep-sec"><h4>ZONES SUIVIES (${p.zones.length})</h4>`;
+  if(!p.zones.length)h+='<div style="color:#64748b">Aucune zone.</div>';
+  p.zones.forEach(z=>{
+    const ss=sortSess(z),meas=ss.filter(s=>avg(s)!=null);
+    h+=`<div class="rep-zone"><div style="font-weight:800;font-size:15px;margin-bottom:4px">📍 ${esc(zoneLabel(z))}</div>`;
+    if(meas.length>=2){const a=avg(meas[0]),b=avg(meas[meas.length-1]),v=(b-a)/a*100;h+=`<div class="rep-evo" style="color:${v>=0?'#16a34a':'#e11d48'}">Évolution : ${v>=0?'+':''}${v.toFixed(1)} %</div><div style="font-size:12px;color:#64748b;margin-bottom:6px">${frDate(meas[0].date)} → ${frDate(meas[meas.length-1].date)} · ${a.toFixed(1)} → ${b.toFixed(1)} mm²</div>`;}
+    if(ss.length){h+='<table class="rep-tbl"><tr><th>Date</th><th>Surface moy.</th><th>Photos</th><th>Δ</th></tr>';ss.forEach((s,i)=>{const m=avg(s);let d='—';if(i>0){const pa=avg(ss[i-1]);if(pa&&m){const v=(m-pa)/pa*100;d=(v>=0?'+':'')+v.toFixed(1)+'%';}}h+=`<tr><td>${frDate(s.date)}</td><td>${m?m.toFixed(1)+' mm²':'—'}</td><td>${s.mesures.length}</td><td>${d}</td></tr>`;});h+='</table>';}
+    else h+='<div style="font-size:12px;color:#64748b">Aucune prise de vue.</div>';
+    h+='</div>';
+  });
+  h+='</div><div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:22px;border-top:1px solid #e2e8f0;padding-top:12px">MobiDerm — by Professeur Johan Legon</div>';
+  return h;
+}
+function mailReport(){let to=DB.email||document.getElementById('mailDest').value.trim();if(!to){to=(prompt('Adresse email du destinataire :')||'').trim();if(!to)return;DB.email=to;saveDB();document.getElementById('mailDest').value=to;}const p=reportPatient;location.href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent('Dossier MobiDerm — '+patName(p))+'&body='+encodeURIComponent('Bonjour,\n\nCi-joint le dossier de '+patName(p)+'.\n(Pense à joindre le PDF que tu viens d\'enregistrer.)\n\nMobiDerm — by Professeur Johan Legon');}
 
 /* ===================== INIT ===================== */
 loadDB();renderPatients();show('patients');
