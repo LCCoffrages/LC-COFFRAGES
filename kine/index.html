@@ -581,7 +581,7 @@ function openDev(){renderDev();show('dev');}
 function renderDev(){const fb=DB.feedback||[];const el=document.getElementById('fbList');if(!fb.length){el.innerHTML='<div class="empty" style="padding:24px"><div class="big">📝</div>Aucun retour pour le moment.</div>';return;}el.innerHTML=fb.map((f,i)=>`<div class="card"><div style="font-size:12px;color:var(--mut);margin-bottom:5px">${esc(f.date)} <button onclick="delFeedback(${i})" style="float:right;background:none;border:none;color:var(--red);font-weight:700;font-size:12px">supprimer</button></div><div style="white-space:pre-wrap">${esc(f.text)}</div></div>`).join('');}
 function addFeedback(){const t=document.getElementById('fbInput').value.trim();if(!t)return;DB.feedback=DB.feedback||[];DB.feedback.unshift({date:new Date().toLocaleString('fr-FR'),text:t});saveDB();document.getElementById('fbInput').value='';renderDev();}
 function delFeedback(i){if(confirm('Supprimer ce retour ?')){DB.feedback.splice(i,1);saveDB();renderDev();}}
-function sendFeedback(){const fb=DB.feedback||[];if(!fb.length){alert('Aucun retour à envoyer.');return;}const body='Retours / remarques sur MobiDerm :\n\n'+fb.map(f=>'• ['+f.date+']\n'+f.text).join('\n\n');location.href='mailto:kevin.cichon@lc-coffrages.fr?subject='+encodeURIComponent('MobiDerm — retours de Johan')+'&body='+encodeURIComponent(body);}
+function sendFeedback(){const fb=DB.feedback||[];if(!fb.length){alert('Aucun retour à envoyer.');return;}const body='Retours / remarques sur MobiDerm :\n\n'+fb.map(f=>'• ['+f.date+']\n'+f.text).join('\n\n');location.href='mailto:kevin.cichon@lc-coffrages.fr?subject='+encodeURIComponent('APPLI KINE')+'&body='+encodeURIComponent(body);}
 
 /* ===================== RAPPORT / PDF ===================== */
 let reportPatient=null;
