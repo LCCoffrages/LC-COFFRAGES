@@ -160,13 +160,11 @@
   <header><button class="back" onclick="goPatients()">‹</button><h1>🛠️ Espace développeur<span class="sub">Retours &amp; remarques</span></h1></header>
   <div class="wrap">
     <div class="card">
-      <p class="muted" style="margin-bottom:8px">Johan, note ici tes <b>remarques, bugs ou idées</b> sur l'appli. Kevin les récupère pour les traiter.</p>
-      <textarea id="fbInput" rows="3" placeholder="Ex : pouvoir mesurer 2 carrés sur la même photo…"></textarea>
-      <button class="btn" style="margin-top:8px" onclick="addFeedback()">➕ Ajouter ce retour</button>
+      <p class="muted" style="margin-bottom:8px">Johan, écris ta <b>remarque, bug ou idée</b> et envoie-la <b>direct à Kevin</b> 👇</p>
+      <textarea id="fbInput" rows="5" placeholder="Ex : pouvoir mesurer 2 carrés sur la même photo…"></textarea>
+      <button class="btn" style="margin-top:10px" onclick="sendFeedback()">✉️ Envoyer à Kevin</button>
+      <div id="fbStatus" style="text-align:center;margin-top:12px;font-weight:700"></div>
     </div>
-    <button class="btn sec" onclick="sendFeedback()">✉️ Envoyer tous les retours à Kevin</button>
-    <h3 style="margin:18px 2px 8px;font-size:14px;color:var(--mut)">RETOURS ENREGISTRÉS</h3>
-    <div id="fbList"></div>
   </div>
 </div>
 
@@ -577,16 +575,13 @@ function exportData(){const blob=new Blob([JSON.stringify(DB)],{type:'applicatio
 function importData(file){if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.patients){DB=d;saveDB();renderPatients();alert('Données restaurées ✓');}}catch(err){alert('Fichier invalide');}};r.readAsText(file);}
 
 /* ===================== ESPACE DÉVELOPPEUR ===================== */
-function openDev(){renderDev();show('dev');}
-function renderDev(){const fb=DB.feedback||[];const el=document.getElementById('fbList');if(!fb.length){el.innerHTML='<div class="empty" style="padding:24px"><div class="big">📝</div>Aucun retour pour le moment.</div>';return;}el.innerHTML=fb.map((f,i)=>`<div class="card"><div style="font-size:12px;color:var(--mut);margin-bottom:5px">${esc(f.date)} <button onclick="delFeedback(${i})" style="float:right;background:none;border:none;color:var(--red);font-weight:700;font-size:12px">supprimer</button></div><div style="white-space:pre-wrap">${esc(f.text)}</div></div>`).join('');}
-function addFeedback(){const t=document.getElementById('fbInput').value.trim();if(!t)return;DB.feedback=DB.feedback||[];DB.feedback.unshift({date:new Date().toLocaleString('fr-FR'),text:t});saveDB();document.getElementById('fbInput').value='';renderDev();}
-function delFeedback(i){if(confirm('Supprimer ce retour ?')){DB.feedback.splice(i,1);saveDB();renderDev();}}
+function openDev(){document.getElementById('fbInput').value='';document.getElementById('fbStatus').textContent='';show('dev');}
 function sendFeedback(){
-  const fb=DB.feedback||[];if(!fb.length){alert('Aucun retour à envoyer.');return;}
-  const body=fb.map(f=>'• ['+f.date+']\n'+f.text).join('\n\n');
-  fetch('https://formsubmit.co/ajax/kevin.cichon@lc-coffrages.fr',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({name:'MobiDerm — retours de Johan',_subject:'APPLI KINE',_template:'table',_captcha:'false',message:body})})
-   .then(r=>r.json()).then(d=>{alert(String(d.success)==='true'?'✓ Retours envoyés à Kevin, merci Johan !':'Hmm, échec de l\'envoi, réessaie.');})
-   .catch(()=>{if(confirm('Envoi direct impossible (pas de réseau ?). Passer par ton appli Mail à la place ?'))location.href='mailto:kevin.cichon@lc-coffrages.fr?subject='+encodeURIComponent('APPLI KINE')+'&body='+encodeURIComponent(body);});
+  const t=document.getElementById('fbInput').value.trim();if(!t){alert('Écris ta remarque d\'abord.');return;}
+  const st=document.getElementById('fbStatus');st.style.color='#64748b';st.textContent='Envoi en cours…';
+  fetch('https://formsubmit.co/ajax/kevin.cichon@lc-coffrages.fr',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({name:'MobiDerm — retour de Johan',_subject:'APPLI KINE',_template:'table',_captcha:'false',message:t})})
+   .then(r=>r.json()).then(d=>{if(String(d.success)==='true'){st.style.color='#16a34a';st.textContent='✓ Envoyé à Kevin, merci !';document.getElementById('fbInput').value='';}else{st.style.color='#e11d48';st.textContent='Échec de l\'envoi, réessaie.';}})
+   .catch(()=>{st.style.color='#e11d48';st.textContent='Pas de réseau ? Réessaie dans un instant.';});
 }
 
 /* ===================== RAPPORT / PDF ===================== */
@@ -609,6 +604,7 @@ function genReport(p){
     if(meas.length>=2){const a=avg(meas[0]),b=avg(meas[meas.length-1]),v=(b-a)/a*100;h+=`<div class="rep-evo" style="color:${v>=0?'#16a34a':'#e11d48'}">Évolution : ${v>=0?'+':''}${v.toFixed(1)} %</div><div style="font-size:12px;color:#64748b;margin-bottom:6px">${frDate(meas[0].date)} → ${frDate(meas[meas.length-1].date)} · ${a.toFixed(1)} → ${b.toFixed(1)} mm²</div>`;}
     if(ss.length){h+='<table class="rep-tbl"><tr><th>Date</th><th>Surface moy.</th><th>Photos</th><th>Δ</th></tr>';ss.forEach((s,i)=>{const m=avg(s);let d='—';if(i>0){const pa=avg(ss[i-1]);if(pa&&m){const v=(m-pa)/pa*100;d=(v>=0?'+':'')+v.toFixed(1)+'%';}}h+=`<tr><td>${frDate(s.date)}</td><td>${m?m.toFixed(1)+' mm²':'—'}</td><td>${s.mesures.length}</td><td>${d}</td></tr>`;});h+='</table>';}
     else h+='<div style="font-size:12px;color:#64748b">Aucune prise de vue.</div>';
+    ss.forEach(s=>{if(s.mesures&&s.mesures.length){h+=`<div style="margin-top:10px;font-size:12px;color:#475569"><b>${frDate(s.date)}</b> — photos mesurées :</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">`+s.mesures.map(m=>`<div style="text-align:center"><img src="${m.thumb}" style="width:96px;height:72px;object-fit:cover;border:1px solid #e2e8f0;border-radius:6px"><div style="font-size:10px;color:#64748b">${m.surface.toFixed(1)} mm²</div></div>`).join('')+'</div>';}});
     h+='</div>';
   });
   h+='</div><div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:22px;border-top:1px solid #e2e8f0;padding-top:12px">MobiDerm — by Professeur Johan Legon</div>';
