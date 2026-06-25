@@ -50,11 +50,38 @@
   .seg button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
   .bodywrap{background:#fff;border-radius:16px;padding:8px 8px 4px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center}
   .bodywrap svg{width:100%;max-width:270px;height:auto}
+  #figWrap{position:relative;display:inline-block;width:100%;max-width:225px;touch-action:none;cursor:crosshair}
+  #figImg{width:100%;display:block;pointer-events:none;-webkit-user-select:none;user-select:none}
+  #pin{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:3px solid #fff;background:rgba(13,148,136,.92);box-shadow:0 1px 7px rgba(0,0,0,.5);pointer-events:none}
+  #pin.hidden{display:none}
+  #pin::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff}
   .bodywrap .hint{font-size:12px;color:var(--mut);padding:2px 0 6px}
   .silh{fill:#c4cedb;pointer-events:none}.silh.hidden{display:none}
   .bp{fill:#0d9488;fill-opacity:0;cursor:pointer;pointer-events:all;transition:fill-opacity .12s}
   .bp:active{fill-opacity:.4}
   .bp.sel{fill-opacity:.6}
+  #report{position:fixed;inset:0;background:#fff;z-index:80;overflow:auto}
+  #report.hidden{display:none}
+  .rep-bar{position:sticky;top:0;z-index:2;background:var(--teal);color:#fff;display:flex;gap:8px;align-items:center;padding:10px 12px}
+  .rep-bar button{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:9px;padding:9px 12px;font-size:14px;font-weight:700}
+  .rep-bar .sp{flex:1}
+  .rep-mail{display:flex;gap:8px;align-items:center;padding:10px 14px;background:#f1f5f9;flex-wrap:wrap}
+  .rep-mail input{flex:1;min-width:160px;padding:9px;border:1.5px solid var(--line);border-radius:9px;font-size:15px}
+  #repBody{max-width:740px;margin:0 auto;padding:18px 16px 60px;color:#0f172a}
+  .rep-h{display:flex;align-items:center;border-bottom:3px solid var(--teal);padding-bottom:10px;margin-bottom:14px}
+  .rep-h .lg{font-size:24px;font-weight:800;color:var(--teal)}
+  .rep-sec{margin:14px 0}.rep-sec h4{font-size:15px;margin-bottom:6px;color:var(--teal-d)}
+  .rep-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  .rep-tbl th,.rep-tbl td{border:1px solid #e2e8f0;padding:6px 8px;text-align:left}
+  .rep-tbl th{background:#f1f5f9}
+  .rep-zone{border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px}
+  .rep-evo{font-weight:800;font-size:18px}
+  @media print{
+    body{background:#fff}
+    #patients,#patient,#zone,#session,#measure,#zonePicker,#splash,.fab{display:none!important}
+    .noprint{display:none!important}
+    #report{position:static;overflow:visible}
+  }
   .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .thumb{position:relative;width:80px}
   .thumb img{width:80px;height:64px;object-fit:cover;border-radius:9px;border:1.5px solid var(--line)}
@@ -188,8 +215,9 @@
       <button id="segB" onclick="switchBody('back')">Vue de dos</button>
     </div>
     <div class="bodywrap">
-      <div class="hint" id="bodyHint">👆 Touche la zone sur le corps (patient vu de face)</div>
-      <svg id="svgFront" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+      <div class="hint" id="bodyHint">👆 Touche l'endroit exact de la zone (glisse le point pour ajuster)</div>
+      <div id="figWrap"><img id="figImg" src="male-front.png" alt="corps"><div id="pin" class="hidden"></div></div>
+      <svg id="svgFront" style="display:none" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
         <g class="silh sM"><use href="#silM"/><use href="#silM" transform="matrix(-1 0 0 1 200 0)"/></g>
         <g class="silh sF hidden"><use href="#hairF"/><use href="#hairF" transform="matrix(-1 0 0 1 200 0)"/><use href="#silF"/><use href="#silF" transform="matrix(-1 0 0 1 200 0)"/></g>
         <ellipse class="bp" cx="100" cy="30" rx="19" ry="23" onclick="pickBP(this,'Tête','')"/>
@@ -219,7 +247,7 @@
         <ellipse class="bp" cx="82" cy="314" rx="11" ry="8" onclick="pickBP(this,'Pied','Droit')"/>
         <ellipse class="bp" cx="118" cy="314" rx="11" ry="8" onclick="pickBP(this,'Pied','Gauche')"/>
       </svg>
-      <svg id="svgBack" class="hidden" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+      <svg id="svgBack" class="hidden" style="display:none" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
         <g class="silh sM"><use href="#silM"/><use href="#silM" transform="matrix(-1 0 0 1 200 0)"/></g>
         <g class="silh sF hidden"><use href="#hairF"/><use href="#hairF" transform="matrix(-1 0 0 1 200 0)"/><use href="#silF"/><use href="#silF" transform="matrix(-1 0 0 1 200 0)"/></g>
         <ellipse class="bp" cx="100" cy="30" rx="19" ry="23" onclick="pickBP(this,'Tête','')"/>
@@ -370,16 +398,22 @@ function renderPatient(){
       <div class="muted" style="font-size:13px;margin-top:4px">${z.sessions.length} prise(s) de vue</div></div>`;
   }).join('');
 }
-function newZone(){editZone=false;document.getElementById('zpTitle').textContent='Nouvelle zone';document.getElementById('zName2').value='';pickSideVal2('');clearBPsel();setSilhouette(P()&&P().sexe);switchBody('front');show('zonePicker');}
-function editZoneOpen(){editZone=true;document.getElementById('zpTitle').textContent='Modifier la zone';document.getElementById('zName2').value=Z().nom;pickSideVal2(Z().side||'');clearBPsel();setSilhouette(P()&&P().sexe);switchBody('front');show('zonePicker');}
-function clearBPsel(){document.querySelectorAll('#zonePicker .bp.sel').forEach(b=>b.classList.remove('sel'));}
-function setSilhouette(sexe){const fem=sexe==='F';document.querySelectorAll('#zonePicker .sM').forEach(g=>g.classList.toggle('hidden',fem));document.querySelectorAll('#zonePicker .sF').forEach(g=>g.classList.toggle('hidden',!fem));}
-function switchBody(v){document.getElementById('svgFront').classList.toggle('hidden',v!=='front');document.getElementById('svgBack').classList.toggle('hidden',v!=='back');document.getElementById('segF').classList.toggle('on',v==='front');document.getElementById('segB').classList.toggle('on',v==='back');document.getElementById('bodyHint').textContent=v==='front'?'👆 Touche la zone (patient vu de FACE)':'👆 Touche la zone (patient vu de DOS)';}
-function pickBP(el,name,side){clearBPsel();el.classList.add('sel');document.getElementById('zName2').value=name;pickSideVal2(side);}
+let curView='front', pinXY=null, figDown=false;
+function setFig(){const sx=((P()&&P().sexe)==='F')?'female':'male';document.getElementById('figImg').src=sx+'-'+curView+'.png';}
+function showPin(xy){pinXY=xy;const pin=document.getElementById('pin');if(!xy){pin.classList.add('hidden');return;}pin.classList.remove('hidden');pin.style.left=(xy.x*100)+'%';pin.style.top=(xy.y*100)+'%';}
+function newZone(){editZone=false;document.getElementById('zpTitle').textContent='Nouvelle zone';document.getElementById('zName2').value='';pickSideVal2('');curView='front';showPin(null);setFig();switchBody('front');show('zonePicker');}
+function editZoneOpen(){editZone=true;document.getElementById('zpTitle').textContent='Modifier la zone';const z=Z();document.getElementById('zName2').value=z.nom;pickSideVal2(z.side||'');curView=z.view||'front';setFig();showPin(z.px!=null?{x:z.px,y:z.py}:null);switchBody(curView);show('zonePicker');}
+function switchBody(v){curView=v;setFig();document.getElementById('segF').classList.toggle('on',v==='front');document.getElementById('segB').classList.toggle('on',v==='back');document.getElementById('bodyHint').textContent=(v==='front'?"👆 Touche l'endroit exact (vue de FACE)":"👆 Touche l'endroit exact (vue de DOS)");}
 function pickSide2(btn){document.querySelectorAll('#sideSel2 button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pickedSide=btn.dataset.s;}
 function pickSideVal2(v){pickedSide=v;document.querySelectorAll('#sideSel2 button').forEach(b=>b.classList.toggle('on',b.dataset.s===v));}
 function cancelZonePick(){if(editZone)goZone();else goPatient();}
-function confirmZone2(){const n=document.getElementById('zName2').value.trim();if(!n){alert('Touche une zone sur le corps, ou tape son nom.');return;}if(editZone){Z().nom=n;Z().side=pickedSide;saveDB();goZone();}else{const z={id:uid(),nom:n,side:pickedSide,sessions:[]};P().zones.push(z);saveDB();openZone(z.id);}}
+function confirmZone2(){const n=document.getElementById('zName2').value.trim();if(!n){alert('Tape le nom de la zone (et touche le corps pour la situer).');return;}const extra={view:curView,px:pinXY?pinXY.x:null,py:pinXY?pinXY.y:null};if(editZone){Object.assign(Z(),{nom:n,side:pickedSide},extra);saveDB();goZone();}else{const z=Object.assign({id:uid(),nom:n,side:pickedSide,sessions:[]},extra);P().zones.push(z);saveDB();openZone(z.id);}}
+(function(){const fw=document.getElementById('figWrap');if(!fw)return;function xy(e){const r=fw.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:Math.max(0,Math.min(1,(t.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(t.clientY-r.top)/r.height))};}
+fw.addEventListener('touchstart',e=>{e.preventDefault();showPin(xy(e));},{passive:false});
+fw.addEventListener('touchmove',e=>{e.preventDefault();showPin(xy(e));},{passive:false});
+fw.addEventListener('mousedown',e=>{figDown=true;showPin(xy(e));});
+fw.addEventListener('mousemove',e=>{if(figDown)showPin(xy(e));});
+window.addEventListener('mouseup',()=>{figDown=false;});})();
 function goPatient(){show('patient');renderPatient();}
 
 /* ===================== ZONE (prises de vue) ===================== */
