@@ -345,7 +345,7 @@
     </div>
 
 <script>
-    const e = 0.050; // Cadre 50mm
+    const e = 0.065; // Cadre 65 mm (CP 15 mm + bastaing 50 mm)
 
     // --- VIEW STATE (zoom/pan du canvas) ---
     const view = { zoom: 1, panX: 0, panY: 0 };
@@ -398,51 +398,57 @@
         // 1. CALCULS (LOGIQUE INCHANGÉE)
         // ==========================================
         
-        // ===== RENFORTS — calque EXACT du tableau de prix Excel (Calcul Tarif mannequins) =====
-        // Bras de force : le PLUS GROS qui rentre dans la LARGEUR (projections du tableau)
+        // ===== GEOMETRIE (cadre 65 mm) + bras de force + renforts — regles reelles Kevin =====
+        // Bras de force : le PLUS GROS (50/60/80) tel que 2 x projection tient dans la
+        // largeur INTERIEURE (Largeur - 2*cadre). Ex : 1.20 m -> interieur 1.07 m -> bras 60.
         const PROJ = { 50: 0.354, 60: 0.424, 80: 0.566 };
-        let bras = 50, proj = 0;            // proj = 0 si aucun bras ne rentre (comme le tableau)
-        if (L - 2 * PROJ[80] >= 0) { bras = 80; proj = PROJ[80]; }
-        else if (L - 2 * PROJ[60] >= 0) { bras = 60; proj = PROJ[60]; }
-        else if (L - 2 * PROJ[50] >= 0) { bras = 50; proj = PROJ[50]; }
+        const interLargeur = L - 2 * e;
+        let bras, proj;
+        if (2 * PROJ[80] <= interLargeur) { bras = 80; proj = PROJ[80]; }
+        else if (2 * PROJ[60] <= interLargeur) { bras = 60; proj = PROJ[60]; }
+        else { bras = 50; proj = PROJ[50]; }
 
-        // Renforts VERTICAUX : selon la LARGEUR RESTANTE (L - 2*bras), seuils du tableau
-        const largeurRestante = L - 2 * proj;
-        function nbRenfortsVerticaux(x) {
-            if (x < 0.65) return 0; if (x < 1.3) return 1; if (x < 1.8) return 2;
-            if (x < 2.3) return 3; if (x < 2.8) return 4; if (x < 3.3) return 5;
-            if (x < 3.8) return 6; if (x < 4.3) return 7; if (x < 4.8) return 8;
-            return 9;
+        // Regle renforts : <= 60 cm entre 2 renforts, <= 30 cm depuis un bras de force.
+        // Zone libre <= 50 cm -> 0 renfort. Sinon renforts espaces de 60 cm PILE, centres.
+        // Logique : ENTRAXE 60 cm par defaut (standard). Renfort/bras = 45 mm d'epaisseur.
+        // SEULEMENT quand on est trop juste (le 60 cm imposerait un renfort de plus), on
+        // passe en VIDE : entraxe 64,5 cm = 60 cm de vide, pour economiser ce renfort.
+        // Vide <= 50 cm entre les 2 bras -> 0 renfort. Tolerance 3 cm sur les 30 cm aux bras.
+        const EP = 0.045;
+        const ENT = 0.60;             // entraxe par defaut (60 cm entre renforts)
+        const ENT_VIDE = 0.60 + EP;   // 64,5 cm (raisonnement vide, quand trop juste)
+        const TOL = 0.06;
+        function nbAvec(Z, ent) {
+            return (Z <= 0.50 + 1e-6) ? 0 : Math.ceil((Z - TOL) / ent - 1e-9);
         }
-        let nb_v = nbRenfortsVerticaux(largeurRestante);
-
-        // Renforts HORIZONTAUX : selon la HAUTEUR RESTANTE, seuils du tableau (+1 si 3 faces)
-        const hauteurRestante = (type == "3" ? H - 0.20 : H) - 2 * proj;
-        function nbRenfortsHorizontaux(x) {
-            if (x < 0.65) return 0; if (x < 1.3) return 1; if (x < 1.8) return 2;
-            if (x < 2.2) return 3; if (x < 2.6) return 4; if (x < 3) return 5;
-            if (x < 3.4) return 6; return 7;
+        function nbRenforts(Z) { return nbAvec(Z, ENT_VIDE); }   // le minimum (le vide ne donne jamais plus)
+        function posRenforts(a, b) {
+            const Z = b - a;
+            const nV = nbAvec(Z, ENT_VIDE), nE = nbAvec(Z, ENT);
+            const n = nV, arr = [];
+            if (n > 0) {
+                // entraxe 60 cm par defaut ; passe au vide (64,5 cm) SEULEMENT si ca evite un renfort
+                const ent = (nV < nE) ? ENT_VIDE : ENT;
+                const start = a + (Z - (n - 1) * ent) / 2;
+                for (let i = 0; i < n; i++) arr.push(start + i * ent);
+            }
+            return arr;
         }
-        let nb_renforts_h = nbRenfortsHorizontaux(hauteurRestante) + (type == "3" ? 1 : 0);
 
-        // "Renforcé" = +1 vertical ET horizontal (equivalent "Béton autoplaçant" du tableau)
-        if (isReinforced) { nb_v += 1; nb_renforts_h += 1; }
-
-        // ===== POSITIONNEMENT des renforts pour le dessin (répartition réguliere) =====
-        let y_ref_bas = (type == "3") ? 0.20 : e;
+        // Renforts HORIZONTAUX : zone verticale entre les apex des bras de force
+        let y_ref_bas = (type == "3") ? 0.20 : e;   // 3 faces : renfort du bas a 20 cm (le +1)
         let y_ref_haut = H - e;
         let limit_bas = y_ref_bas + proj;
         let limit_haut = y_ref_haut - proj;
         let zone_libre = limit_haut - limit_bas;
+        let renforts_h = posRenforts(limit_bas, limit_haut);
 
-        let renforts_h = [];
-        if (nb_renforts_h > 0 && zone_libre > 0) {
-            let step = zone_libre / (nb_renforts_h + 1);
-            for (let i = 1; i <= nb_renforts_h; i++) renforts_h.push(limit_bas + i * step);
-        }
+        // Renforts VERTICAUX : zone horizontale entre les apex des bras de force
+        let renforts_v = posRenforts(e + proj, (L - e) - proj);
 
-        let renforts_v = [];
-        for (let k = 1; k <= nb_v; k++) renforts_v.push(k * (L / (nb_v + 1)));
+        // Compteurs affiches
+        let nb_renforts_h = renforts_h.length + (type == "3" ? 1 : 0);   // + le renfort du bas (porte)
+        let nb_v = renforts_v.length;
 
         let display_renforts = [...renforts_h];
         if (type == "3") display_renforts.unshift(0.20);
