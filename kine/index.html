@@ -150,8 +150,24 @@
       <input type="file" id="imp" accept="application/json" class="hidden" onchange="importData(this.files[0])">
     </div>
     <div id="patientList"></div>
+    <button class="btn gray sm" style="margin:20px auto 0;display:block" onclick="openDev()">🛠️ Espace développeur</button>
   </div>
   <button class="fab" onclick="newPatient()"><span class="p">＋</span> Patient</button>
+</div>
+
+<!-- ======= ESPACE DÉVELOPPEUR (retours) ======= -->
+<div id="dev" class="hidden">
+  <header><button class="back" onclick="goPatients()">‹</button><h1>🛠️ Espace développeur<span class="sub">Retours &amp; remarques</span></h1></header>
+  <div class="wrap">
+    <div class="card">
+      <p class="muted" style="margin-bottom:8px">Johan, note ici tes <b>remarques, bugs ou idées</b> sur l'appli. Kevin les récupère pour les traiter.</p>
+      <textarea id="fbInput" rows="3" placeholder="Ex : pouvoir mesurer 2 carrés sur la même photo…"></textarea>
+      <button class="btn" style="margin-top:8px" onclick="addFeedback()">➕ Ajouter ce retour</button>
+    </div>
+    <button class="btn sec" onclick="sendFeedback()">✉️ Envoyer tous les retours à Kevin</button>
+    <h3 style="margin:18px 2px 8px;font-size:14px;color:var(--mut)">RETOURS ENREGISTRÉS</h3>
+    <div id="fbList"></div>
+  </div>
 </div>
 
 <!-- ======= PATIENT (zones) ======= -->
@@ -373,7 +389,7 @@ function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 function avg(s){if(!s.mesures.length)return null;return s.mesures.reduce((a,m)=>a+m.surface,0)/s.mesures.length;}
 function sortSess(z){return [...z.sessions].sort((a,b)=>a.date.localeCompare(b.date));}
 function zoneLabel(z){return z.nom+(z.side?' '+z.side:'');}
-function show(id){for(const s of ['patients','patient','zone','session','measure','zonePicker'])document.getElementById(s).classList.toggle('hidden',s!==id);}
+function show(id){for(const s of ['patients','patient','zone','session','measure','zonePicker','dev'])document.getElementById(s).classList.toggle('hidden',s!==id);}
 
 /* ===================== PATIENTS ===================== */
 function renderPatients(){
@@ -559,6 +575,13 @@ window.addEventListener('resize',()=>{if(img&&!document.getElementById('measure'
 /* ===================== EXPORT / IMPORT ===================== */
 function exportData(){const blob=new Blob([JSON.stringify(DB)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='suivi_etirement_'+todayISO()+'.json';a.click();}
 function importData(file){if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.patients){DB=d;saveDB();renderPatients();alert('Données restaurées ✓');}}catch(err){alert('Fichier invalide');}};r.readAsText(file);}
+
+/* ===================== ESPACE DÉVELOPPEUR ===================== */
+function openDev(){renderDev();show('dev');}
+function renderDev(){const fb=DB.feedback||[];const el=document.getElementById('fbList');if(!fb.length){el.innerHTML='<div class="empty" style="padding:24px"><div class="big">📝</div>Aucun retour pour le moment.</div>';return;}el.innerHTML=fb.map((f,i)=>`<div class="card"><div style="font-size:12px;color:var(--mut);margin-bottom:5px">${esc(f.date)} <button onclick="delFeedback(${i})" style="float:right;background:none;border:none;color:var(--red);font-weight:700;font-size:12px">supprimer</button></div><div style="white-space:pre-wrap">${esc(f.text)}</div></div>`).join('');}
+function addFeedback(){const t=document.getElementById('fbInput').value.trim();if(!t)return;DB.feedback=DB.feedback||[];DB.feedback.unshift({date:new Date().toLocaleString('fr-FR'),text:t});saveDB();document.getElementById('fbInput').value='';renderDev();}
+function delFeedback(i){if(confirm('Supprimer ce retour ?')){DB.feedback.splice(i,1);saveDB();renderDev();}}
+function sendFeedback(){const fb=DB.feedback||[];if(!fb.length){alert('Aucun retour à envoyer.');return;}const body='Retours / remarques sur MobiDerm :\n\n'+fb.map(f=>'• ['+f.date+']\n'+f.text).join('\n\n');location.href='mailto:kevin.cichon@lc-coffrages.fr?subject='+encodeURIComponent('MobiDerm — retours de Johan')+'&body='+encodeURIComponent(body);}
 
 /* ===================== RAPPORT / PDF ===================== */
 let reportPatient=null;
