@@ -586,7 +586,7 @@ function sendFeedback(){
 
 /* ===================== RAPPORT / PDF ===================== */
 let reportPatient=null;
-function exportPDF(){reportPatient=P();document.getElementById('mailDest').value=DB.email||'';document.getElementById('repBody').innerHTML=genReport(P());const r=document.getElementById('report');r.classList.remove('hidden');r.scrollTop=0;}
+function exportPDF(){reportPatient=P();document.getElementById('mailDest').value=DB.email||'johann_banon@yahoo.fr';document.getElementById('repBody').innerHTML=genReport(P());const r=document.getElementById('report');r.classList.remove('hidden');r.scrollTop=0;}
 function closeReport(){document.getElementById('report').classList.add('hidden');}
 function genReport(p){
   const now=new Date().toLocaleDateString('fr-FR');
