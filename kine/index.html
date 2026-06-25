@@ -51,9 +51,10 @@
   .bodywrap{background:#fff;border-radius:16px;padding:8px 8px 4px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center}
   .bodywrap svg{width:100%;max-width:270px;height:auto}
   .bodywrap .hint{font-size:12px;color:var(--mut);padding:2px 0 6px}
-  .bp{fill:#cbd5e1;stroke:#94a3b8;stroke-width:1.2;cursor:pointer;transition:fill .12s}
-  .bp:active{fill:#5eead4}
-  .bp.sel{fill:#0d9488;stroke:#0f766e}
+  .silh{fill:#c4cedb;pointer-events:none}.silh.hidden{display:none}
+  .bp{fill:#0d9488;fill-opacity:0;cursor:pointer;pointer-events:all;transition:fill-opacity .12s}
+  .bp:active{fill-opacity:.4}
+  .bp.sel{fill-opacity:.6}
   .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .thumb{position:relative;width:80px}
   .thumb img{width:80px;height:64px;object-fit:cover;border-radius:9px;border:1.5px solid var(--line)}
@@ -171,6 +172,13 @@
   <button class="fab" onclick="measureNew()"><span class="p">＋</span> Photo</button>
 </div>
 
+<!-- silhouettes réutilisables (homme / femme) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="silM" d="M100,6 C116,6 124,16 124,30 C124,42 118,49 111,51 L109,58 C122,59 137,63 149,70 C153,73 155,82 155,92 L157,152 L158,190 C159,201 155,203 151,201 L148,190 L145,152 L141,98 C140,88 136,81 130,80 C127,100 124,115 123,129 C124,145 128,154 132,161 L128,234 L123,303 L122,314 C122,321 125,323 117,323 L107,321 L107,307 L104,234 L101,171 L100,171 L100,6 Z"/>
+  <path id="silF" d="M100,7 C114,7 121,16 121,29 C121,40 116,47 110,50 L108,57 C119,58 131,62 141,69 C145,72 147,80 147,89 L149,150 L150,187 C151,197 147,199 144,197 L141,187 L138,150 L135,96 C134,87 131,81 126,80 C123,98 119,112 118,126 C120,143 126,153 132,162 L127,234 L122,303 L121,314 C121,320 124,322 116,322 L107,320 L107,307 L104,234 L101,170 L100,170 L100,7 Z"/>
+  <path id="hairF" fill="#aab4c2" d="M100,1 C122,1 130,15 129,34 C129,46 126,58 122,69 L114,67 C118,55 120,44 119,32 C118,18 112,8 100,8 Z"/>
+</defs></svg>
+
 <!-- ======= CHOIX ZONE (schéma du corps) ======= -->
 <div id="zonePicker" class="hidden">
   <header><button class="back" onclick="cancelZonePick()">‹</button><h1 id="zpTitle">Choisir la zone</h1></header>
@@ -182,6 +190,8 @@
     <div class="bodywrap">
       <div class="hint" id="bodyHint">👆 Touche la zone sur le corps (patient vu de face)</div>
       <svg id="svgFront" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+        <g class="silh sM"><use href="#silM"/><use href="#silM" transform="matrix(-1 0 0 1 200 0)"/></g>
+        <g class="silh sF hidden"><use href="#hairF"/><use href="#hairF" transform="matrix(-1 0 0 1 200 0)"/><use href="#silF"/><use href="#silF" transform="matrix(-1 0 0 1 200 0)"/></g>
         <ellipse class="bp" cx="100" cy="30" rx="19" ry="23" onclick="pickBP(this,'Tête','')"/>
         <rect class="bp" x="91" y="51" width="18" height="12" rx="3" onclick="pickBP(this,'Cervical','')"/>
         <rect class="bp" x="69" y="62" width="62" height="42" rx="9" onclick="pickBP(this,'Thorax','')"/>
@@ -210,6 +220,8 @@
         <ellipse class="bp" cx="118" cy="314" rx="11" ry="8" onclick="pickBP(this,'Pied','Gauche')"/>
       </svg>
       <svg id="svgBack" class="hidden" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+        <g class="silh sM"><use href="#silM"/><use href="#silM" transform="matrix(-1 0 0 1 200 0)"/></g>
+        <g class="silh sF hidden"><use href="#hairF"/><use href="#hairF" transform="matrix(-1 0 0 1 200 0)"/><use href="#silF"/><use href="#silF" transform="matrix(-1 0 0 1 200 0)"/></g>
         <ellipse class="bp" cx="100" cy="30" rx="19" ry="23" onclick="pickBP(this,'Tête','')"/>
         <rect class="bp" x="91" y="51" width="18" height="12" rx="3" onclick="pickBP(this,'Cervical','')"/>
         <rect class="bp" x="69" y="62" width="62" height="46" rx="9" onclick="pickBP(this,'Dorsal','')"/>
@@ -358,9 +370,10 @@ function renderPatient(){
       <div class="muted" style="font-size:13px;margin-top:4px">${z.sessions.length} prise(s) de vue</div></div>`;
   }).join('');
 }
-function newZone(){editZone=false;document.getElementById('zpTitle').textContent='Nouvelle zone';document.getElementById('zName2').value='';pickSideVal2('');clearBPsel();switchBody('front');show('zonePicker');}
-function editZoneOpen(){editZone=true;document.getElementById('zpTitle').textContent='Modifier la zone';document.getElementById('zName2').value=Z().nom;pickSideVal2(Z().side||'');clearBPsel();switchBody('front');show('zonePicker');}
+function newZone(){editZone=false;document.getElementById('zpTitle').textContent='Nouvelle zone';document.getElementById('zName2').value='';pickSideVal2('');clearBPsel();setSilhouette(P()&&P().sexe);switchBody('front');show('zonePicker');}
+function editZoneOpen(){editZone=true;document.getElementById('zpTitle').textContent='Modifier la zone';document.getElementById('zName2').value=Z().nom;pickSideVal2(Z().side||'');clearBPsel();setSilhouette(P()&&P().sexe);switchBody('front');show('zonePicker');}
 function clearBPsel(){document.querySelectorAll('#zonePicker .bp.sel').forEach(b=>b.classList.remove('sel'));}
+function setSilhouette(sexe){const fem=sexe==='F';document.querySelectorAll('#zonePicker .sM').forEach(g=>g.classList.toggle('hidden',fem));document.querySelectorAll('#zonePicker .sF').forEach(g=>g.classList.toggle('hidden',!fem));}
 function switchBody(v){document.getElementById('svgFront').classList.toggle('hidden',v!=='front');document.getElementById('svgBack').classList.toggle('hidden',v!=='back');document.getElementById('segF').classList.toggle('on',v==='front');document.getElementById('segB').classList.toggle('on',v==='back');document.getElementById('bodyHint').textContent=v==='front'?'👆 Touche la zone (patient vu de FACE)':'👆 Touche la zone (patient vu de DOS)';}
 function pickBP(el,name,side){clearBPsel();el.classList.add('sel');document.getElementById('zName2').value=name;pickSideVal2(side);}
 function pickSide2(btn){document.querySelectorAll('#sideSel2 button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pickedSide=btn.dataset.s;}
