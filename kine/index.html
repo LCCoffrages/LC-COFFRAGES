@@ -45,6 +45,15 @@
   .sides{display:flex;gap:8px;margin-top:8px}
   .sides button{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--mut);font-weight:700}
   .sides button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+  .seg{display:flex;gap:8px;margin-bottom:12px}
+  .seg button{flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--mut);font-weight:700}
+  .seg button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+  .bodywrap{background:#fff;border-radius:16px;padding:8px 8px 4px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center}
+  .bodywrap svg{width:100%;max-width:270px;height:auto}
+  .bodywrap .hint{font-size:12px;color:var(--mut);padding:2px 0 6px}
+  .bp{fill:#cbd5e1;stroke:#94a3b8;stroke-width:1.2;cursor:pointer;transition:fill .12s}
+  .bp:active{fill:#5eead4}
+  .bp.sel{fill:#0d9488;stroke:#0f766e}
   .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .thumb{position:relative;width:80px}
   .thumb img{width:80px;height:64px;object-fit:cover;border-radius:9px;border:1.5px solid var(--line)}
@@ -108,7 +117,7 @@
 
 <!-- ======= ZONE (prises de vue) ======= -->
 <div id="zone" class="hidden">
-  <header><button class="back" onclick="goPatient()">‹</button><h1 id="zTitle">Zone<span class="sub" id="zSub"></span></h1></header>
+  <header><button class="back" onclick="goPatient()">‹</button><h1 id="zTitle">Zone<span class="sub" id="zSub"></span></h1><button class="back" style="font-size:18px" onclick="editZoneOpen()">✎</button></header>
   <div class="wrap">
     <div id="zEvo"></div>
     <h3 style="margin:4px 2px 10px;font-size:14px;color:var(--mut)">PRISES DE VUE</h3>
@@ -137,6 +146,87 @@
     <button class="btn gray" onclick="delSession()">🗑 Supprimer cette prise de vue</button>
   </div>
   <button class="fab" onclick="measureNew()"><span class="p">＋</span> Photo</button>
+</div>
+
+<!-- ======= CHOIX ZONE (schéma du corps) ======= -->
+<div id="zonePicker" class="hidden">
+  <header><button class="back" onclick="cancelZonePick()">‹</button><h1 id="zpTitle">Choisir la zone</h1></header>
+  <div class="wrap">
+    <div class="seg">
+      <button id="segF" class="on" onclick="switchBody('front')">Vue de face</button>
+      <button id="segB" onclick="switchBody('back')">Vue de dos</button>
+    </div>
+    <div class="bodywrap">
+      <div class="hint" id="bodyHint">👆 Touche la zone sur le corps (patient vu de face)</div>
+      <svg id="svgFront" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+        <ellipse class="bp" cx="100" cy="30" rx="19" ry="23" onclick="pickBP(this,'Tête','')"/>
+        <rect class="bp" x="91" y="51" width="18" height="12" rx="3" onclick="pickBP(this,'Cervical','')"/>
+        <rect class="bp" x="69" y="62" width="62" height="42" rx="9" onclick="pickBP(this,'Thorax','')"/>
+        <rect class="bp" x="73" y="104" width="54" height="46" rx="9" onclick="pickBP(this,'Abdomen','')"/>
+        <ellipse class="bp" cx="84" cy="156" rx="14" ry="12" onclick="pickBP(this,'Hanche','Droit')"/>
+        <ellipse class="bp" cx="116" cy="156" rx="14" ry="12" onclick="pickBP(this,'Hanche','Gauche')"/>
+        <ellipse class="bp" cx="64" cy="70" rx="15" ry="12" onclick="pickBP(this,'Épaule','Droit')"/>
+        <ellipse class="bp" cx="136" cy="70" rx="15" ry="12" onclick="pickBP(this,'Épaule','Gauche')"/>
+        <rect class="bp" x="49" y="76" width="15" height="46" rx="7" onclick="pickBP(this,'Bras','Droit')"/>
+        <rect class="bp" x="136" y="76" width="15" height="46" rx="7" onclick="pickBP(this,'Bras','Gauche')"/>
+        <ellipse class="bp" cx="56" cy="126" rx="9" ry="9" onclick="pickBP(this,'Coude','Droit')"/>
+        <ellipse class="bp" cx="144" cy="126" rx="9" ry="9" onclick="pickBP(this,'Coude','Gauche')"/>
+        <rect class="bp" x="47" y="132" width="13" height="44" rx="6" onclick="pickBP(this,'Avant-bras','Droit')"/>
+        <rect class="bp" x="140" y="132" width="13" height="44" rx="6" onclick="pickBP(this,'Avant-bras','Gauche')"/>
+        <ellipse class="bp" cx="52" cy="184" rx="10" ry="12" onclick="pickBP(this,'Main','Droit')"/>
+        <ellipse class="bp" cx="148" cy="184" rx="10" ry="12" onclick="pickBP(this,'Main','Gauche')"/>
+        <rect class="bp" x="74" y="160" width="20" height="58" rx="9" onclick="pickBP(this,'Cuisse','Droit')"/>
+        <rect class="bp" x="106" y="160" width="20" height="58" rx="9" onclick="pickBP(this,'Cuisse','Gauche')"/>
+        <ellipse class="bp" cx="84" cy="226" rx="11" ry="10" onclick="pickBP(this,'Genou','Droit')"/>
+        <ellipse class="bp" cx="116" cy="226" rx="11" ry="10" onclick="pickBP(this,'Genou','Gauche')"/>
+        <rect class="bp" x="76" y="234" width="16" height="54" rx="7" onclick="pickBP(this,'Tibia','Droit')"/>
+        <rect class="bp" x="108" y="234" width="16" height="54" rx="7" onclick="pickBP(this,'Tibia','Gauche')"/>
+        <ellipse class="bp" cx="84" cy="296" rx="8" ry="8" onclick="pickBP(this,'Cheville','Droit')"/>
+        <ellipse class="bp" cx="116" cy="296" rx="8" ry="8" onclick="pickBP(this,'Cheville','Gauche')"/>
+        <ellipse class="bp" cx="82" cy="314" rx="11" ry="8" onclick="pickBP(this,'Pied','Droit')"/>
+        <ellipse class="bp" cx="118" cy="314" rx="11" ry="8" onclick="pickBP(this,'Pied','Gauche')"/>
+      </svg>
+      <svg id="svgBack" class="hidden" viewBox="0 0 200 360" xmlns="http://www.w3.org/2000/svg">
+        <ellipse class="bp" cx="100" cy="30" rx="19" ry="23" onclick="pickBP(this,'Tête','')"/>
+        <rect class="bp" x="91" y="51" width="18" height="12" rx="3" onclick="pickBP(this,'Cervical','')"/>
+        <rect class="bp" x="69" y="62" width="62" height="46" rx="9" onclick="pickBP(this,'Dorsal','')"/>
+        <rect class="bp" x="73" y="108" width="54" height="42" rx="9" onclick="pickBP(this,'Lombaire','')"/>
+        <ellipse class="bp" cx="84" cy="158" rx="16" ry="13" onclick="pickBP(this,'Fessier','Gauche')"/>
+        <ellipse class="bp" cx="116" cy="158" rx="16" ry="13" onclick="pickBP(this,'Fessier','Droit')"/>
+        <ellipse class="bp" cx="64" cy="70" rx="15" ry="12" onclick="pickBP(this,'Épaule','Gauche')"/>
+        <ellipse class="bp" cx="136" cy="70" rx="15" ry="12" onclick="pickBP(this,'Épaule','Droit')"/>
+        <rect class="bp" x="49" y="76" width="15" height="46" rx="7" onclick="pickBP(this,'Bras','Gauche')"/>
+        <rect class="bp" x="136" y="76" width="15" height="46" rx="7" onclick="pickBP(this,'Bras','Droit')"/>
+        <ellipse class="bp" cx="56" cy="126" rx="9" ry="9" onclick="pickBP(this,'Coude','Gauche')"/>
+        <ellipse class="bp" cx="144" cy="126" rx="9" ry="9" onclick="pickBP(this,'Coude','Droit')"/>
+        <rect class="bp" x="47" y="132" width="13" height="44" rx="6" onclick="pickBP(this,'Avant-bras','Gauche')"/>
+        <rect class="bp" x="140" y="132" width="13" height="44" rx="6" onclick="pickBP(this,'Avant-bras','Droit')"/>
+        <ellipse class="bp" cx="52" cy="184" rx="10" ry="12" onclick="pickBP(this,'Main','Gauche')"/>
+        <ellipse class="bp" cx="148" cy="184" rx="10" ry="12" onclick="pickBP(this,'Main','Droit')"/>
+        <rect class="bp" x="74" y="162" width="20" height="56" rx="9" onclick="pickBP(this,'Ischio-jambiers','Gauche')"/>
+        <rect class="bp" x="106" y="162" width="20" height="56" rx="9" onclick="pickBP(this,'Ischio-jambiers','Droit')"/>
+        <ellipse class="bp" cx="84" cy="226" rx="11" ry="10" onclick="pickBP(this,'Creux poplité','Gauche')"/>
+        <ellipse class="bp" cx="116" cy="226" rx="11" ry="10" onclick="pickBP(this,'Creux poplité','Droit')"/>
+        <rect class="bp" x="76" y="234" width="16" height="54" rx="7" onclick="pickBP(this,'Mollet','Gauche')"/>
+        <rect class="bp" x="108" y="234" width="16" height="54" rx="7" onclick="pickBP(this,'Mollet','Droit')"/>
+        <ellipse class="bp" cx="84" cy="296" rx="8" ry="8" onclick="pickBP(this,&quot;Tendon d'Achille&quot;,'Gauche')"/>
+        <ellipse class="bp" cx="116" cy="296" rx="8" ry="8" onclick="pickBP(this,&quot;Tendon d'Achille&quot;,'Droit')"/>
+        <ellipse class="bp" cx="82" cy="314" rx="11" ry="8" onclick="pickBP(this,'Talon','Gauche')"/>
+        <ellipse class="bp" cx="118" cy="314" rx="11" ry="8" onclick="pickBP(this,'Talon','Droit')"/>
+      </svg>
+    </div>
+    <div class="card">
+      <label class="lbl">Zone choisie (modifiable)</label>
+      <input type="text" id="zName2" list="zonesAnat" placeholder="Touche le corps, ou tape ici…" autocomplete="off">
+      <label class="lbl" style="margin-top:10px">Côté</label>
+      <div class="sides" id="sideSel2">
+        <button data-s="Droit" onclick="pickSide2(this)">Droit</button>
+        <button data-s="Gauche" onclick="pickSide2(this)">Gauche</button>
+        <button data-s="" onclick="pickSide2(this)" class="on">Axial / —</button>
+      </div>
+      <button class="btn" style="margin-top:16px" onclick="confirmZone2()">✓ Valider la zone</button>
+    </div>
+  </div>
 </div>
 
 <!-- ======= MESURE ======= -->
@@ -169,18 +259,7 @@
   <option value="Cervical"><option value="Trapèze"><option value="Épaule"><option value="Deltoïde"><option value="Omoplate"><option value="Bras"><option value="Biceps"><option value="Triceps"><option value="Coude"><option value="Avant-bras"><option value="Poignet"><option value="Main"><option value="Dorsal"><option value="Lombaire"><option value="Sacrum"><option value="Abdomen"><option value="Hanche"><option value="Fessier"><option value="Cuisse antérieure"><option value="Cuisse postérieure"><option value="Quadriceps"><option value="Ischio-jambiers"><option value="Genou"><option value="Rotule"><option value="Creux poplité"><option value="Mollet"><option value="Triceps sural"><option value="Tibia"><option value="Cheville"><option value="Tendon d'Achille"><option value="Pied"><option value="Cicatrice">
 </datalist>
 
-<dialog id="dlgZone">
-  <h3 id="dlgZoneT">Nouvelle zone</h3>
-  <label class="lbl">Zone du corps (terme technique)</label>
-  <input type="text" id="zName" list="zonesAnat" placeholder="ex : Genou, Tendon d'Achille…" autocomplete="off">
-  <label class="lbl" style="margin-top:12px">Côté</label>
-  <div class="sides" id="sideSel">
-    <button data-s="Droit" onclick="pickSide(this)">Droit</button>
-    <button data-s="Gauche" onclick="pickSide(this)">Gauche</button>
-    <button data-s="" onclick="pickSide(this)" class="on">Axial / —</button>
-  </div>
-  <div class="dbtns"><button class="btn gray" onclick="document.getElementById('dlgZone').close()">Annuler</button><button class="btn" onclick="confirmZone()">OK</button></div>
-</dialog>
+<!-- (choix de zone = écran #zonePicker avec schéma du corps) -->
 <dialog id="dlgMm">
   <h3>Échelle : distance réelle</h3>
   <p class="muted" style="margin-bottom:10px">Combien de <b>millimètres</b> séparent les 2 points placés sur la règle ?</p>
@@ -210,7 +289,7 @@ function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 function avg(s){if(!s.mesures.length)return null;return s.mesures.reduce((a,m)=>a+m.surface,0)/s.mesures.length;}
 function sortSess(z){return [...z.sessions].sort((a,b)=>a.date.localeCompare(b.date));}
 function zoneLabel(z){return z.nom+(z.side?' '+z.side:'');}
-function show(id){for(const s of ['patients','patient','zone','session','measure'])document.getElementById(s).classList.toggle('hidden',s!==id);}
+function show(id){for(const s of ['patients','patient','zone','session','measure','zonePicker'])document.getElementById(s).classList.toggle('hidden',s!==id);}
 
 /* ===================== PATIENTS ===================== */
 function renderPatients(){
@@ -238,11 +317,15 @@ function renderPatient(){
       <div class="muted" style="font-size:13px;margin-top:4px">${z.sessions.length} prise(s) de vue</div></div>`;
   }).join('');
 }
-function newZone(){editZone=false;document.getElementById('dlgZoneT').textContent='Nouvelle zone';document.getElementById('zName').value='';pickSideVal('');document.getElementById('dlgZone').showModal();setTimeout(()=>document.getElementById('zName').focus(),100);}
-function editZoneOpen(){editZone=true;document.getElementById('dlgZoneT').textContent='Modifier la zone';document.getElementById('zName').value=Z().nom;pickSideVal(Z().side||'');document.getElementById('dlgZone').showModal();}
-function pickSide(btn){document.querySelectorAll('#sideSel button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pickedSide=btn.dataset.s;}
-function pickSideVal(v){pickedSide=v;document.querySelectorAll('#sideSel button').forEach(b=>b.classList.toggle('on',b.dataset.s===v));}
-function confirmZone(){const n=document.getElementById('zName').value.trim();if(!n)return;if(editZone){Z().nom=n;Z().side=pickedSide;saveDB();document.getElementById('dlgZone').close();renderZone();}else{const z={id:uid(),nom:n,side:pickedSide,sessions:[]};P().zones.push(z);saveDB();document.getElementById('dlgZone').close();openZone(z.id);}}
+function newZone(){editZone=false;document.getElementById('zpTitle').textContent='Nouvelle zone';document.getElementById('zName2').value='';pickSideVal2('');clearBPsel();switchBody('front');show('zonePicker');}
+function editZoneOpen(){editZone=true;document.getElementById('zpTitle').textContent='Modifier la zone';document.getElementById('zName2').value=Z().nom;pickSideVal2(Z().side||'');clearBPsel();switchBody('front');show('zonePicker');}
+function clearBPsel(){document.querySelectorAll('#zonePicker .bp.sel').forEach(b=>b.classList.remove('sel'));}
+function switchBody(v){document.getElementById('svgFront').classList.toggle('hidden',v!=='front');document.getElementById('svgBack').classList.toggle('hidden',v!=='back');document.getElementById('segF').classList.toggle('on',v==='front');document.getElementById('segB').classList.toggle('on',v==='back');document.getElementById('bodyHint').textContent=v==='front'?'👆 Touche la zone (patient vu de FACE)':'👆 Touche la zone (patient vu de DOS)';}
+function pickBP(el,name,side){clearBPsel();el.classList.add('sel');document.getElementById('zName2').value=name;pickSideVal2(side);}
+function pickSide2(btn){document.querySelectorAll('#sideSel2 button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');pickedSide=btn.dataset.s;}
+function pickSideVal2(v){pickedSide=v;document.querySelectorAll('#sideSel2 button').forEach(b=>b.classList.toggle('on',b.dataset.s===v));}
+function cancelZonePick(){if(editZone)goZone();else goPatient();}
+function confirmZone2(){const n=document.getElementById('zName2').value.trim();if(!n){alert('Touche une zone sur le corps, ou tape son nom.');return;}if(editZone){Z().nom=n;Z().side=pickedSide;saveDB();goZone();}else{const z={id:uid(),nom:n,side:pickedSide,sessions:[]};P().zones.push(z);saveDB();openZone(z.id);}}
 function goPatient(){show('patient');renderPatient();}
 
 /* ===================== ZONE (prises de vue) ===================== */
