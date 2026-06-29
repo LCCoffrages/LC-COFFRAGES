@@ -117,8 +117,10 @@
   #camBar select{flex:1;min-width:0;padding:9px;border-radius:9px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:13px}
   #camBar>button:first-child{border:none;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:700}
   #camSnap{background:#16a34a;color:#fff;border:none;border-radius:11px;padding:12px 18px;font-size:15px;font-weight:700;white-space:nowrap}
-  #ghost{position:absolute;left:0;right:0;top:0;bottom:58px;width:100%;height:calc(100% - 58px);object-fit:contain;pointer-events:none;z-index:2;opacity:.35}
+  #ghost{position:absolute;left:0;right:0;top:0;bottom:58px;width:100%;height:calc(100% - 58px);object-fit:contain;pointer-events:none;z-index:2;opacity:.35;transform-origin:center;will-change:transform}
   #ghost.hidden{display:none}
+  #ghostTouch{position:absolute;left:0;right:0;top:0;bottom:58px;z-index:4;touch-action:none}
+  #ghostTouch.hidden{display:none}
   #ghostHint{position:absolute;top:8px;left:0;right:0;text-align:center;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px #000;z-index:3;pointer-events:none}
   #ghostHint.hidden{display:none}
   #ghostOp{flex:0 1 70px;min-width:50px}
@@ -368,7 +370,8 @@
     <div id="camLive" class="hidden">
       <video id="camVid" autoplay playsinline muted></video>
       <img id="ghost" class="hidden" alt="">
-      <div id="ghostHint" class="hidden">👻 Aligne sur la photo précédente</div>
+      <div id="ghostTouch" class="hidden"></div>
+      <div id="ghostHint" class="hidden">👻 Pince pour redimensionner · glisse pour déplacer</div>
       <div id="camBar">
         <button onclick="cancelLiveCam()" style="background:#334155;color:#fff">✕</button>
         <input id="ghostOp" type="range" min="0" max="70" value="35" class="hidden" oninput="setGhostOp(this.value)">
@@ -377,15 +380,13 @@
       </div>
     </div>
     <div id="loupe"><canvas id="lpcv" width="256" height="256"></canvas></div>
-    <div class="res hidden" id="resBox"><div class="s" id="resS">—</div><div class="l">surface mm²</div></div>
-    <div id="wandCtl" class="hidden">🖌️ Taille du pinceau&nbsp; <input id="brushSize" type="range" min="4" max="45" value="12" oninput="setBrushSize(this.value)"></div>
+    <div class="res hidden" id="resBox"><div class="s" id="resS">—</div><div class="l">mm² <span id="resDim"></span></div></div>
     <div id="status" class="hidden"></div>
   </div>
   <div id="mbar">
     <button class="b-load" onclick="showPhotoChoice()">↻ Photo</button>
     <button class="b-scale" id="bScale" onclick="startScale()" disabled>📏 Échelle</button>
-    <button class="b-poly" id="bPoly" onclick="startPoly()" disabled>⬛ Contour</button>
-    <button class="b-wand" id="bWand" onclick="startBrush()" disabled>🖌️ Cicatrice</button>
+    <button class="b-poly" id="bPoly" onclick="startPoly()" disabled>⬛ Carré</button>
     <button class="b-undo" id="bUndo" onclick="undoPt()" disabled>↶</button>
     <button class="b-ok" id="bOk" onclick="validateMeasure()" disabled>✓ OK</button>
   </div>
@@ -446,6 +447,8 @@ function esc(s){return (s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'
 function frDate(iso){return new Date(iso+'T00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}
 function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function avg(s){if(!s.mesures.length)return null;return s.mesures.reduce((a,m)=>a+m.surface,0)/s.mesures.length;}
+function avgDim(s,k){const v=s.mesures.filter(m=>m[k]!=null);return v.length?v.reduce((a,m)=>a+m[k],0)/v.length:null;}
+function evoRow(lbl,a,b,u){const v=(b-a)/a*100,col=v>=0?'#16a34a':'#dc2626';return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)"><span><b>${lbl}</b> <span class="muted">${a.toFixed(1)} → ${b.toFixed(1)} ${u}</span></span><span style="color:${col};font-weight:800">${v>=0?'+':''}${v.toFixed(1)} %</span></div>`;}
 function sortSess(z){return [...z.sessions].sort((a,b)=>a.date.localeCompare(b.date));}
 function zoneLabel(z){return z.nom+(z.side?' '+z.side:'');}
 function show(id){for(const s of ['patients','patient','zone','session','measure','zonePicker','dev','tuto'])document.getElementById(s).classList.toggle('hidden',s!==id);}
@@ -529,9 +532,13 @@ function renderZone(){
   document.getElementById('zSub').textContent=patName(P());
   const ss=sortSess(z),meas=ss.filter(s=>avg(s)!=null);
   const evoEl=document.getElementById('zEvo');
-  if(meas.length>=2){const a=avg(meas[0]),b=avg(meas[meas.length-1]);const v=(b-a)/a*100;
-    evoEl.innerHTML=`<div class="evoBig"><div class="n">${v>=0?'+':''}${v.toFixed(1)}%</div><div><div class="z">Évolution de la surface</div><div class="t">${frDate(meas[0].date)} → ${frDate(meas[meas.length-1].date)} · ${a.toFixed(1)} → ${b.toFixed(1)} mm²</div></div></div>`;}
-  else evoEl.innerHTML=meas.length?'<div class="card muted" style="text-align:center">Refais une prise (dans ~3 semaines) pour voir l\'évolution.</div>':'';
+  if(meas.length>=2){const s0=meas[0],s1=meas[meas.length-1];const a=avg(s0),b=avg(s1),v=(b-a)/a*100;
+    let rows=evoRow('Surface',a,b,'mm²');
+    const aL=avgDim(s0,'larg'),bL=avgDim(s1,'larg'),aH=avgDim(s0,'haut'),bH=avgDim(s1,'haut');
+    if(aL&&bL)rows+=evoRow('Sens largeur',aL,bL,'mm');
+    if(aH&&bH)rows+=evoRow('Sens hauteur',aH,bH,'mm');
+    evoEl.innerHTML=`<div class="evoBig"><div class="n">${v>=0?'+':''}${v.toFixed(1)}%</div><div><div class="z">Étirement (surface)</div><div class="t">${frDate(s0.date)} → ${frDate(s1.date)}</div></div></div><div class="card" style="margin-top:8px">${rows}</div>`;}
+  else evoEl.innerHTML=meas.length?'<div class="card muted" style="text-align:center">Refais une prise (étirée au max, dans ~3 semaines) pour voir l\'évolution.</div>':'';
   const el=document.getElementById('sessionList');
   if(!z.sessions.length){el.innerHTML='<div class="empty"><div class="big">📷</div>Aucune prise de vue.<br>Appuie sur <b>📷 Nouvelle prise</b>.</div>';return;}
   const desc=[...ss].reverse();
@@ -555,8 +562,8 @@ function renderSession(){
   document.getElementById('sDate').value=s.date;
   document.getElementById('sCount').textContent=s.mesures.length+' / 3';
   document.getElementById('mesThumbs').innerHTML=s.mesures.map((m,i)=>`<div class="thumb"><button class="x" onclick="delMes(${i})">×</button><img src="${m.thumb}"><div class="s">${m.surface.toFixed(1)}</div></div>`).join('')||'<span class="muted">Aucune photo mesurée</span>';
-  const m=avg(s);
-  document.getElementById('sAvg').innerHTML=m?`<div class="muted" style="font-size:13px">Surface moyenne</div><div style="font-size:30px;font-weight:800;color:var(--teal)">${m.toFixed(1)} mm²</div>`:'';
+  const m=avg(s),mL=avgDim(s,'larg'),mH=avgDim(s,'haut');
+  document.getElementById('sAvg').innerHTML=m?`<div class="muted" style="font-size:13px">Surface moyenne (étiré max)</div><div style="font-size:30px;font-weight:800;color:var(--teal)">${m.toFixed(1)} mm²</div>`+((mL&&mH)?`<div class="muted" style="font-size:14px;margin-top:2px">${mL.toFixed(1)} × ${mH.toFixed(1)} mm (larg. × haut.)</div>`:''):'';
 }
 function delMes(i){if(confirm('Supprimer cette mesure ?')){S().mesures.splice(i,1);saveDB();renderSession();}}
 function delSession(){if(confirm('Supprimer cette prise de vue ?')){const z=Z();z.sessions=z.sessions.filter(x=>x.id!==curSid);saveDB();goZone();}}
@@ -658,9 +665,8 @@ function showPhotoChoice(){document.getElementById('photoChoice').classList.remo
 function resetButtons(){
   document.getElementById('bScale').disabled=!img;
   document.getElementById('bPoly').disabled=!(img&&pxPerMm);
-  document.getElementById('bWand').disabled=!(img&&pxPerMm);
-  document.getElementById('bUndo').disabled=!((mode==='scale'&&scalePts.length)||(mode==='poly'&&polyPts.length)||mode==='brush');
-  document.getElementById('bOk').disabled=!((pxPerMm&&polyPts.length>=3)||(wandMask&&wandSurface));
+  document.getElementById('bUndo').disabled=!((mode==='scale'&&scalePts.length)||(mode==='poly'&&polyPts.length));
+  document.getElementById('bOk').disabled=!(pxPerMm&&polyPts.length>=3);
 }
 function setStatus(h){const s=document.getElementById('status');s.classList.remove('hidden');s.innerHTML=h;}
 function loadImg(file){if(!file)return;const r=new FileReader();r.onload=e=>loadImgSrc(e.target.result);r.readAsDataURL(file);}
@@ -670,13 +676,26 @@ function startLiveCam(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert("Caméra non supportée par ce navigateur.");return;}
   document.getElementById('photoChoice').classList.add('hidden');
   document.getElementById('camLive').classList.remove('hidden');
-  const gt=lastZoneThumb(),g=document.getElementById('ghost'),go=document.getElementById('ghostOp'),gh=document.getElementById('ghostHint');
-  if(gt){g.src=gt;g.style.opacity=.35;go.value=35;g.classList.remove('hidden');go.classList.remove('hidden');gh.classList.remove('hidden');}
-  else{g.classList.add('hidden');go.classList.add('hidden');gh.classList.add('hidden');}
+  const gt=lastZoneThumb(),g=document.getElementById('ghost'),go=document.getElementById('ghostOp'),gh=document.getElementById('ghostHint'),gtl=document.getElementById('ghostTouch');
+  if(gt){g.src=gt;g.style.opacity=.35;go.value=35;resetGhostT();g.classList.remove('hidden');go.classList.remove('hidden');gh.classList.remove('hidden');gtl.classList.remove('hidden');}
+  else{g.classList.add('hidden');go.classList.add('hidden');gh.classList.add('hidden');gtl.classList.add('hidden');}
   openCam().catch(e=>{alert("Caméra inaccessible : "+(e.message||e)+"\n\n(Sur PC, ouvre l'appli via le lien https:// — pas le fichier local — et autorise la caméra.)");cancelLiveCam();});
 }
 function lastZoneThumb(){const z=Z();if(!z)return null;const ss=sortSess(z);for(let i=ss.length-1;i>=0;i--){const m=ss[i].mesures;if(m&&m.length)return m[m.length-1].thumb;}return null;}
 function setGhostOp(v){document.getElementById('ghost').style.opacity=v/100;}
+let gScale=1,gTx=0,gTy=0,gT={};
+function applyGhostT(){const g=document.getElementById('ghost');if(g)g.style.transform='translate('+gTx+'px,'+gTy+'px) scale('+gScale+')';}
+function resetGhostT(){gScale=1;gTx=0;gTy=0;applyGhostT();}
+(function(){
+  const gt=document.getElementById('ghostTouch');if(!gt)return;
+  gt.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===2){const a=e.touches[0],b=e.touches[1];gT.d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);gT.s=gScale;gT.mode='pinch';}else{gT.x=e.touches[0].clientX;gT.y=e.touches[0].clientY;gT.tx=gTx;gT.ty=gTy;gT.mode='pan';}},{passive:false});
+  gt.addEventListener('touchmove',e=>{e.preventDefault();if(gT.mode==='pinch'&&e.touches.length>=2){const a=e.touches[0],b=e.touches[1];const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);gScale=Math.max(.3,Math.min(5,gT.s*d/gT.d));applyGhostT();}else if(gT.mode==='pan'&&e.touches.length){gTx=gT.tx+(e.touches[0].clientX-gT.x);gTy=gT.ty+(e.touches[0].clientY-gT.y);applyGhostT();}},{passive:false});
+  gt.addEventListener('touchend',()=>{gT.mode=null;},{passive:false});
+  gt.addEventListener('wheel',e=>{e.preventDefault();gScale=Math.max(.3,Math.min(5,gScale*(e.deltaY<0?1.06:0.94)));applyGhostT();},{passive:false});
+  gt.addEventListener('mousedown',e=>{gT.mode='mpan';gT.x=e.clientX;gT.y=e.clientY;gT.tx=gTx;gT.ty=gTy;});
+  window.addEventListener('mousemove',e=>{if(gT.mode==='mpan'){gTx=gT.tx+(e.clientX-gT.x);gTy=gT.ty+(e.clientY-gT.y);applyGhostT();}});
+  window.addEventListener('mouseup',()=>{if(gT.mode==='mpan')gT.mode=null;});
+})();
 async function openCam(){
   if(camStream)camStream.getTracks().forEach(t=>t.stop());
   const id=document.getElementById('camSel').value;
@@ -709,7 +728,7 @@ function stopLiveCam(){
   if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
   const v=document.getElementById('camVid');if(v)v.srcObject=null;
   document.getElementById('camLive').classList.add('hidden');
-  ['ghost','ghostOp','ghostHint'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
+  ['ghost','ghostOp','ghostHint','ghostTouch'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
 }
 function cancelLiveCam(){stopLiveCam();showPhotoChoice();}
 function loadImgSrc(src){
@@ -743,14 +762,33 @@ function placePoint(ix,iy){const p=toImg(ix,iy);if(mode==='wand'){doWand(p.x,p.y
 function askMm(){document.getElementById('mmIn').value='';document.getElementById('dlgMm').showModal();setTimeout(()=>document.getElementById('mmIn').focus(),100);}
 function confirmMm(){const mm=parseFloat(document.getElementById('mmIn').value);if(!mm||mm<=0)return;const d=Math.hypot(scalePts[0].x-scalePts[1].x,scalePts[0].y-scalePts[1].y);pxPerMm=d/mm;document.getElementById('dlgMm').close();mode='idle';resetButtons();setStatus('Échelle OK ✓. Appuie sur <b>⬛ Contour</b> pour entourer le carré.');draw();}
 function polyAreaPx(){if(polyPts.length<3)return 0;const cx=polyPts.reduce((s,p)=>s+p.x,0)/polyPts.length,cy=polyPts.reduce((s,p)=>s+p.y,0)/polyPts.length;const o=[...polyPts].sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));let A=0;for(let i=0;i<o.length;i++){const j=(i+1)%o.length;A+=o[i].x*o[j].y-o[j].x*o[i].y;}return Math.abs(A)/2;}
-function computeArea(){if(!pxPerMm||polyPts.length<3){document.getElementById('resBox').classList.add('hidden');return null;}const mm2=polyAreaPx()/(pxPerMm*pxPerMm);document.getElementById('resBox').classList.remove('hidden');document.getElementById('resS').textContent=mm2.toFixed(1);document.getElementById('bOk').disabled=false;return mm2;}
+function polyDims(){
+  if(polyPts.length!==4||!pxPerMm)return null;
+  const cx=polyPts.reduce((s,p)=>s+p.x,0)/4,cy=polyPts.reduce((s,p)=>s+p.y,0)/4;
+  const o=[...polyPts].sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));
+  const d=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
+  const A=(d(o[0],o[1])+d(o[2],o[3]))/2, B=(d(o[1],o[2])+d(o[3],o[0]))/2;
+  const dir={x:o[1].x-o[0].x,y:o[1].y-o[0].y};
+  let larg,haut;
+  if(Math.abs(dir.x)>=Math.abs(dir.y)){larg=A;haut=B;}else{larg=B;haut=A;}
+  return {larg:larg/pxPerMm, haut:haut/pxPerMm};
+}
+function computeArea(){
+  if(!pxPerMm||polyPts.length<3){document.getElementById('resBox').classList.add('hidden');return null;}
+  const mm2=polyAreaPx()/(pxPerMm*pxPerMm);
+  document.getElementById('resBox').classList.remove('hidden');
+  document.getElementById('resS').textContent=mm2.toFixed(1);
+  const dm=polyDims();
+  document.getElementById('resDim').textContent=dm?(' · '+dm.larg.toFixed(1)+' × '+dm.haut.toFixed(1)+' mm'):'';
+  document.getElementById('bOk').disabled=false;return mm2;
+}
 function validateMeasure(){
-  let mm2=null,red=null;
-  if(wandMask&&wandSurface){mm2=wandSurface;red=wandRedness;}else{mm2=computeArea();}
-  if(!mm2){setStatus("Détecte la cicatrice (✨) ou fais le contour — + l'échelle.");return;}
+  const mm2=computeArea();
+  if(!mm2){setStatus("Trace le <b>carré</b> (⬛) + cale l'<b>échelle</b> (📏).");return;}
+  const dm=polyDims();
   const t=document.createElement('canvas');t.width=200;t.height=150;const s=Math.min(200/img.w,150/img.h);t.getContext('2d').drawImage(img.el,(200-img.w*s)/2,(150-img.h*s)/2,img.w*s,img.h*s);
   const m={surface:mm2,thumb:t.toDataURL('image/jpeg',.65)};
-  if(red!=null)m.rougeur=red;
+  if(dm){m.larg=Math.round(dm.larg*10)/10;m.haut=Math.round(dm.haut*10)/10;}
   S().mesures.push(m);saveDB();closeMeasure();renderSession();
 }
 function closeMeasure(){stopLiveCam();show('session');}
