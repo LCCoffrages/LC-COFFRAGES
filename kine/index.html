@@ -369,14 +369,14 @@
     </div>
     <div id="loupe"><canvas id="lpcv" width="256" height="256"></canvas></div>
     <div class="res hidden" id="resBox"><div class="s" id="resS">—</div><div class="l">surface mm²</div></div>
-    <div id="wandCtl" class="hidden">Sensibilité&nbsp; <input type="range" min="14" max="80" value="36" oninput="setWandTol(this.value)"></div>
+    <div id="wandCtl" class="hidden">🖌️ Taille du pinceau&nbsp; <input id="brushSize" type="range" min="4" max="45" value="12" oninput="setBrushSize(this.value)"></div>
     <div id="status" class="hidden"></div>
   </div>
   <div id="mbar">
     <button class="b-load" onclick="showPhotoChoice()">↻ Photo</button>
     <button class="b-scale" id="bScale" onclick="startScale()" disabled>📏 Échelle</button>
     <button class="b-poly" id="bPoly" onclick="startPoly()" disabled>⬛ Contour</button>
-    <button class="b-wand" id="bWand" onclick="startWand()" disabled>✨ Auto</button>
+    <button class="b-wand" id="bWand" onclick="startBrush()" disabled>🖌️ Cicatrice</button>
     <button class="b-undo" id="bUndo" onclick="undoPt()" disabled>↶</button>
     <button class="b-ok" id="bOk" onclick="validateMeasure()" disabled>✓ OK</button>
   </div>
@@ -557,7 +557,8 @@ const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 const lp=document.getElementById('loupe'),lpcv=document.getElementById('lpcv'),lpx=lpcv.getContext('2d');
 let img=null, view={s:1,tx:0,ty:0}, mode='idle', scalePts=[], polyPts=[], pxPerMm=null, drag=null;
 let wandMask=null, wandMaskCanvas=null, wandSurface=null, wandRedness=null, wandSeed=null, wandTol=36;
-function resetWand(){wandMask=null;wandSurface=null;wandRedness=null;wandSeed=null;const w=document.getElementById('wandCtl');if(w)w.classList.add('hidden');}
+let brushMask=null, brushR=12, lastBrushPt=null;
+function resetWand(){wandMask=null;wandSurface=null;wandRedness=null;wandSeed=null;brushMask=null;lastBrushPt=null;const w=document.getElementById('wandCtl');if(w)w.classList.add('hidden');}
 function startWand(){
   if(!pxPerMm){setStatus("Cale d'abord l'échelle 📏");return;}
   if(!img||!img.data){setStatus("Image non lisible pour l'auto.");return;}
@@ -590,6 +591,53 @@ function floodWand(){
   setStatus("Cicatrice : <b>"+wandSurface.toFixed(1)+" mm²</b> · rougeur <b>"+wandRedness+"</b>. Ajuste ou <b>✓ OK</b>.");draw();
 }
 function setWandTol(v){wandTol=parseInt(v);if(wandSeed)floodWand();}
+/* ===== Calcul surface + rougeur depuis un masque ===== */
+function computeMaskResults(mask){
+  const W=img.w,H=img.h,d=img.data.data;
+  if(!wandMaskCanvas)wandMaskCanvas=document.createElement('canvas');
+  wandMaskCanvas.width=W;wandMaskCanvas.height=H;
+  const mc=wandMaskCanvas.getContext('2d'),out=mc.createImageData(W,H),od=out.data;
+  let count=0,minx=W,miny=H,maxx=0,maxy=0,sumE=0;
+  for(let p=0;p<mask.length;p++)if(mask[p]){const i=p*4;od[i]=124;od[i+1]=58;od[i+2]=237;od[i+3]=120;count++;const px=p%W,py=(p/W)|0;if(px<minx)minx=px;if(px>maxx)maxx=px;if(py<miny)miny=py;if(py>maxy)maxy=py;sumE+=d[i]-(d[i+1]+d[i+2])/2;}
+  mc.putImageData(out,0,0);
+  if(!count){wandMask=null;wandSurface=null;wandRedness=null;return;}
+  wandMask={count};wandSurface=count/(pxPerMm*pxPerMm);
+  const eScar=sumE/count,pad=Math.round(Math.max(8,(maxx-minx+maxy-miny)/8));
+  let sumS=0,cS=0;
+  for(let py=Math.max(0,miny-pad);py<=Math.min(H-1,maxy+pad);py++)for(let px=Math.max(0,minx-pad);px<=Math.min(W-1,maxx+pad);px++){const p=py*W+px;if(!mask[p]){const i=p*4;sumS+=d[i]-(d[i+1]+d[i+2])/2;cS++;}}
+  wandRedness=Math.round((eScar-(cS?sumS/cS:0))*10)/10;
+}
+/* ===== Pinceau cicatrice ===== */
+function startBrush(){
+  if(!pxPerMm){setStatus("Cale d'abord l'échelle 📏");return;}
+  if(!img||!img.data){setStatus("Image non lisible.");return;}
+  mode='brush';scalePts=[];polyPts=[];brushMask=new Uint8Array(img.w*img.h);lastBrushPt=null;
+  brushR=Math.max(5,Math.round(pxPerMm*1.2));document.getElementById('brushSize').value=brushR;
+  if(wandMaskCanvas){wandMaskCanvas.getContext('2d').clearRect(0,0,wandMaskCanvas.width,wandMaskCanvas.height);}
+  wandMask=null;wandSurface=null;wandRedness=null;
+  document.getElementById('wandCtl').classList.remove('hidden');
+  document.getElementById('resBox').classList.add('hidden');resetButtons();
+  setStatus("🖌️ <b>Peins la cicatrice</b> avec le doigt. ↶ = effacer · curseur = taille.");draw();
+}
+function paintBrush(ix,iy){
+  if(!brushMask)return;
+  const W=img.w,H=img.h,r=brushR,r2=r*r,cx=Math.round(ix),cy=Math.round(iy);
+  for(let y=Math.max(0,cy-r);y<=Math.min(H-1,cy+r);y++)for(let x=Math.max(0,cx-r);x<=Math.min(W-1,cx+r);x++){const dx=x-cx,dy=y-cy;if(dx*dx+dy*dy<=r2)brushMask[y*W+x]=1;}
+  if(!wandMaskCanvas){wandMaskCanvas=document.createElement('canvas');wandMaskCanvas.width=W;wandMaskCanvas.height=H;}
+  const g=wandMaskCanvas.getContext('2d');g.fillStyle='rgba(124,58,237,0.47)';g.beginPath();g.arc(cx,cy,r,0,7);g.fill();
+  wandMask={count:1};draw();
+}
+function paintBrushLine(im){
+  if(lastBrushPt){const dx=im.x-lastBrushPt.x,dy=im.y-lastBrushPt.y,dist=Math.hypot(dx,dy),steps=Math.max(1,Math.ceil(dist/(brushR*0.6)));for(let s=1;s<=steps;s++)paintBrush(lastBrushPt.x+dx*s/steps,lastBrushPt.y+dy*s/steps);}
+  else paintBrush(im.x,im.y);
+  lastBrushPt=im;
+}
+function endBrush(){
+  lastBrushPt=null;
+  if(mode==='brush'&&brushMask){computeMaskResults(brushMask);if(wandSurface){document.getElementById('resBox').classList.remove('hidden');document.getElementById('resS').textContent=wandSurface.toFixed(1);document.getElementById('bOk').disabled=false;setStatus("Cicatrice : <b>"+wandSurface.toFixed(1)+" mm²</b> · rougeur <b>"+wandRedness+"</b>. Continue ou <b>✓ OK</b>.");}draw();}
+}
+function setBrushSize(v){brushR=parseInt(v);}
+function clearBrush(){if(brushMask)brushMask.fill(0);if(wandMaskCanvas)wandMaskCanvas.getContext('2d').clearRect(0,0,wandMaskCanvas.width,wandMaskCanvas.height);wandMask=null;wandSurface=null;wandRedness=null;document.getElementById('resBox').classList.add('hidden');document.getElementById('bOk').disabled=true;setStatus("🖌️ Peins la cicatrice avec le doigt.");draw();}
 function measureNew(){
   if(S().mesures.length>=3 && !confirm('Déjà 3 photos (recommandé). En ajouter une autre ?'))return;
   mode='idle';img=null;scalePts=[];polyPts=[];pxPerMm=null;drag=null;wandMaskCanvas=null;resetWand();
@@ -602,7 +650,7 @@ function resetButtons(){
   document.getElementById('bScale').disabled=!img;
   document.getElementById('bPoly').disabled=!(img&&pxPerMm);
   document.getElementById('bWand').disabled=!(img&&pxPerMm);
-  document.getElementById('bUndo').disabled=!((mode==='scale'&&scalePts.length)||(mode==='poly'&&polyPts.length));
+  document.getElementById('bUndo').disabled=!((mode==='scale'&&scalePts.length)||(mode==='poly'&&polyPts.length)||mode==='brush');
   document.getElementById('bOk').disabled=!((pxPerMm&&polyPts.length>=3)||(wandMask&&wandSurface));
 }
 function setStatus(h){const s=document.getElementById('status');s.classList.remove('hidden');s.innerHTML=h;}
@@ -675,7 +723,7 @@ function draw(){
 function dot(p,c){ctx.beginPath();ctx.arc(p.x,p.y,7,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,5,0,7);ctx.fillStyle=c;ctx.fill();}
 function startScale(){mode='scale';scalePts=[];pxPerMm=null;resetWand();document.getElementById('resBox').classList.add('hidden');resetButtons();setStatus('Tape <b>2 points</b> sur la règle, à une distance connue (ex : 0 et 5 mm).');draw();}
 function startPoly(){if(!pxPerMm){setStatus('Cale d\'abord l\'échelle 📏');return;}mode='poly';polyPts=[];resetWand();document.getElementById('resBox').classList.add('hidden');resetButtons();setStatus('Tape les <b>4 coins du carré</b>, puis <b>✓ OK</b>. (↶ = corriger)');draw();}
-function undoPt(){if(mode==='scale'&&scalePts.length)scalePts.pop();else if(mode==='poly'&&polyPts.length)polyPts.pop();if(mode==='poly')computeArea();resetButtons();draw();}
+function undoPt(){if(mode==='brush'){clearBrush();return;}if(mode==='scale'&&scalePts.length)scalePts.pop();else if(mode==='poly'&&polyPts.length)polyPts.pop();if(mode==='poly')computeArea();resetButtons();draw();}
 function placePoint(ix,iy){const p=toImg(ix,iy);if(mode==='wand'){doWand(p.x,p.y);return;}if(mode==='scale'){if(scalePts.length<2){scalePts.push(p);if(scalePts.length===2)askMm();}}else if(mode==='poly'){polyPts.push(p);computeArea();}resetButtons();draw();}
 function askMm(){document.getElementById('mmIn').value='';document.getElementById('dlgMm').showModal();setTimeout(()=>document.getElementById('mmIn').focus(),100);}
 function confirmMm(){const mm=parseFloat(document.getElementById('mmIn').value);if(!mm||mm<=0)return;const d=Math.hypot(scalePts[0].x-scalePts[1].x,scalePts[0].y-scalePts[1].y);pxPerMm=d/mm;document.getElementById('dlgMm').close();mode='idle';resetButtons();setStatus('Échelle OK ✓. Appuie sur <b>⬛ Contour</b> pour entourer le carré.');draw();}
@@ -698,13 +746,13 @@ let touch={mode:null,sx:0,sy:0,moved:false,startView:null,pinch:null};
 const HIT=22;
 function findPoint(x,y){const all=[...scalePts.map((p,i)=>({arr:'s',i,p})),...polyPts.map((p,i)=>({arr:'p',i,p}))];for(const it of all){const s=toScreen(it.p);if(Math.hypot(s.x-x,s.y-y)<HIT)return it;}return null;}
 function evtXY(e,i=0){const r=cv.getBoundingClientRect();const t=e.touches?e.touches[i]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
-wrap.addEventListener('touchstart',e=>{if(!img)return;if(e.touches.length===2){const a=evtXY(e,0),b=evtXY(e,1);touch.mode='pinch';touch.pinch={d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,sv:{...view}};drag=null;hideLoupe();return;}const p=evtXY(e);touch.sx=p.x;touch.sy=p.y;touch.moved=false;touch.startView={...view};const hit=findPoint(p.x,p.y);if(hit){drag=hit;touch.mode='drag';showLoupe(p.x,p.y);}else{drag=null;touch.mode='maybe';}},{passive:false});
-wrap.addEventListener('touchmove',e=>{if(!img)return;e.preventDefault();if(touch.mode==='pinch'&&e.touches.length>=2){const a=evtXY(e,0),b=evtXY(e,1);const d=Math.hypot(a.x-b.x,a.y-b.y);const sv=touch.pinch.sv;const ns=Math.max(.2,Math.min(12,sv.s*d/touch.pinch.d));const cx=touch.pinch.cx,cy=touch.pinch.cy;view.s=ns;view.tx=cx-(cx-sv.tx)*(ns/sv.s);view.ty=cy-(cy-sv.ty)*(ns/sv.s);draw();return;}const p=evtXY(e);if(touch.mode==='drag'&&drag){const im=toImg(p.x,p.y);(drag.arr==='s'?scalePts:polyPts)[drag.i]={x:im.x,y:im.y};showLoupe(p.x,p.y);if(drag.arr==='p')computeArea();draw();return;}if(Math.hypot(p.x-touch.sx,p.y-touch.sy)>6)touch.moved=true;if(touch.mode==='maybe'&&touch.moved)touch.mode='pan';if(touch.mode==='pan'){view.tx=touch.startView.tx+(p.x-touch.sx);view.ty=touch.startView.ty+(p.y-touch.sy);draw();}},{passive:false});
-wrap.addEventListener('touchend',e=>{if(!img)return;hideLoupe();if(touch.mode==='maybe'&&!touch.moved)placePoint(touch.sx,touch.sy);touch.mode=null;drag=null;},{passive:false});
+wrap.addEventListener('touchstart',e=>{if(!img)return;if(e.touches.length===2){const a=evtXY(e,0),b=evtXY(e,1);touch.mode='pinch';touch.pinch={d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,sv:{...view}};drag=null;hideLoupe();return;}const p=evtXY(e);touch.sx=p.x;touch.sy=p.y;touch.moved=false;touch.startView={...view};if(mode==='brush'){touch.mode='brush';lastBrushPt=null;paintBrushLine(toImg(p.x,p.y));return;}const hit=findPoint(p.x,p.y);if(hit){drag=hit;touch.mode='drag';showLoupe(p.x,p.y);}else{drag=null;touch.mode='maybe';}},{passive:false});
+wrap.addEventListener('touchmove',e=>{if(!img)return;e.preventDefault();if(touch.mode==='pinch'&&e.touches.length>=2){const a=evtXY(e,0),b=evtXY(e,1);const d=Math.hypot(a.x-b.x,a.y-b.y);const sv=touch.pinch.sv;const ns=Math.max(.2,Math.min(12,sv.s*d/touch.pinch.d));const cx=touch.pinch.cx,cy=touch.pinch.cy;view.s=ns;view.tx=cx-(cx-sv.tx)*(ns/sv.s);view.ty=cy-(cy-sv.ty)*(ns/sv.s);draw();return;}const p=evtXY(e);if(touch.mode==='brush'){paintBrushLine(toImg(p.x,p.y));return;}if(touch.mode==='drag'&&drag){const im=toImg(p.x,p.y);(drag.arr==='s'?scalePts:polyPts)[drag.i]={x:im.x,y:im.y};showLoupe(p.x,p.y);if(drag.arr==='p')computeArea();draw();return;}if(Math.hypot(p.x-touch.sx,p.y-touch.sy)>6)touch.moved=true;if(touch.mode==='maybe'&&touch.moved)touch.mode='pan';if(touch.mode==='pan'){view.tx=touch.startView.tx+(p.x-touch.sx);view.ty=touch.startView.ty+(p.y-touch.sy);draw();}},{passive:false});
+wrap.addEventListener('touchend',e=>{if(!img)return;hideLoupe();if(touch.mode==='brush'){endBrush();touch.mode=null;return;}if(touch.mode==='maybe'&&!touch.moved)placePoint(touch.sx,touch.sy);touch.mode=null;drag=null;},{passive:false});
 let mdown=false;
-wrap.addEventListener('mousedown',e=>{if(!img)return;const p=evtXY(e);mdown=true;touch.sx=p.x;touch.sy=p.y;touch.moved=false;touch.startView={...view};const hit=findPoint(p.x,p.y);if(hit){drag=hit;touch.mode='drag';showLoupe(p.x,p.y);}else{drag=null;touch.mode='maybe';}});
-wrap.addEventListener('mousemove',e=>{if(!img||!mdown)return;const p=evtXY(e);if(touch.mode==='drag'&&drag){const im=toImg(p.x,p.y);(drag.arr==='s'?scalePts:polyPts)[drag.i]={x:im.x,y:im.y};showLoupe(p.x,p.y);if(drag.arr==='p')computeArea();draw();return;}if(Math.hypot(p.x-touch.sx,p.y-touch.sy)>6)touch.moved=true;if(touch.mode==='maybe'&&touch.moved)touch.mode='pan';if(touch.mode==='pan'){view.tx=touch.startView.tx+(p.x-touch.sx);view.ty=touch.startView.ty+(p.y-touch.sy);draw();}});
-wrap.addEventListener('mouseup',e=>{if(!img)return;mdown=false;hideLoupe();if(touch.mode==='maybe'&&!touch.moved)placePoint(touch.sx,touch.sy);touch.mode=null;drag=null;});
+wrap.addEventListener('mousedown',e=>{if(!img)return;const p=evtXY(e);mdown=true;touch.sx=p.x;touch.sy=p.y;touch.moved=false;touch.startView={...view};if(mode==='brush'){touch.mode='brush';lastBrushPt=null;paintBrushLine(toImg(p.x,p.y));return;}const hit=findPoint(p.x,p.y);if(hit){drag=hit;touch.mode='drag';showLoupe(p.x,p.y);}else{drag=null;touch.mode='maybe';}});
+wrap.addEventListener('mousemove',e=>{if(!img||!mdown)return;const p=evtXY(e);if(touch.mode==='brush'){paintBrushLine(toImg(p.x,p.y));return;}if(touch.mode==='drag'&&drag){const im=toImg(p.x,p.y);(drag.arr==='s'?scalePts:polyPts)[drag.i]={x:im.x,y:im.y};showLoupe(p.x,p.y);if(drag.arr==='p')computeArea();draw();return;}if(Math.hypot(p.x-touch.sx,p.y-touch.sy)>6)touch.moved=true;if(touch.mode==='maybe'&&touch.moved)touch.mode='pan';if(touch.mode==='pan'){view.tx=touch.startView.tx+(p.x-touch.sx);view.ty=touch.startView.ty+(p.y-touch.sy);draw();}});
+wrap.addEventListener('mouseup',e=>{if(!img)return;mdown=false;hideLoupe();if(touch.mode==='brush'){endBrush();touch.mode=null;return;}if(touch.mode==='maybe'&&!touch.moved)placePoint(touch.sx,touch.sy);touch.mode=null;drag=null;});
 wrap.addEventListener('wheel',e=>{if(!img)return;e.preventDefault();const p=evtXY(e);const k=e.deltaY<0?1.12:.89;const ns=Math.max(.2,Math.min(12,view.s*k));view.tx=p.x-(p.x-view.tx)*(ns/view.s);view.ty=p.y-(p.y-view.ty)*(ns/view.s);view.s=ns;draw();},{passive:false});
 function showLoupe(x,y){if(!img)return;lp.style.display='block';lp.style.left=(x<150?'auto':'10px');lp.style.right=(x<150?'10px':'auto');const im=toImg(x,y);const src=32;lpx.clearRect(0,0,256,256);lpx.imageSmoothingEnabled=true;lpx.drawImage(img.el,im.x-src/2,im.y-src/2,src,src,0,0,256,256);lpx.strokeStyle='rgba(94,234,212,.95)';lpx.lineWidth=2;lpx.beginPath();lpx.moveTo(128,98);lpx.lineTo(128,158);lpx.moveTo(98,128);lpx.lineTo(158,128);lpx.stroke();lpx.beginPath();lpx.arc(128,128,5,0,7);lpx.strokeStyle='#fff';lpx.stroke();}
 function hideLoupe(){lp.style.display='none';}
