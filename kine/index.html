@@ -117,6 +117,12 @@
   #camBar select{flex:1;min-width:0;padding:9px;border-radius:9px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:13px}
   #camBar>button:first-child{border:none;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:700}
   #camSnap{background:#16a34a;color:#fff;border:none;border-radius:11px;padding:12px 18px;font-size:15px;font-weight:700;white-space:nowrap}
+  #ghost{position:absolute;left:0;right:0;top:0;bottom:58px;width:100%;height:calc(100% - 58px);object-fit:contain;pointer-events:none;z-index:2;opacity:.35}
+  #ghost.hidden{display:none}
+  #ghostHint{position:absolute;top:8px;left:0;right:0;text-align:center;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px #000;z-index:3;pointer-events:none}
+  #ghostHint.hidden{display:none}
+  #ghostOp{flex:0 1 70px;min-width:50px}
+  #ghostOp.hidden{display:none}
   #loupe{position:absolute;top:10px;left:10px;width:128px;height:128px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.5);overflow:hidden;display:none;z-index:4;background:#000;pointer-events:none}
   #loupe canvas{width:100%;height:100%}
   #status{position:absolute;left:0;right:0;bottom:0;background:rgba(8,12,22,.86);color:#dbeafe;padding:11px 14px;font-size:14px;text-align:center;z-index:3;line-height:1.35}
@@ -361,8 +367,11 @@
     </div>
     <div id="camLive" class="hidden">
       <video id="camVid" autoplay playsinline muted></video>
+      <img id="ghost" class="hidden" alt="">
+      <div id="ghostHint" class="hidden">👻 Aligne sur la photo précédente</div>
       <div id="camBar">
         <button onclick="cancelLiveCam()" style="background:#334155;color:#fff">✕</button>
+        <input id="ghostOp" type="range" min="0" max="70" value="35" class="hidden" oninput="setGhostOp(this.value)">
         <select id="camSel" onchange="switchCam()"></select>
         <button id="camSnap" onclick="snapLiveCam()">📸 Capturer</button>
       </div>
@@ -661,8 +670,13 @@ function startLiveCam(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert("Caméra non supportée par ce navigateur.");return;}
   document.getElementById('photoChoice').classList.add('hidden');
   document.getElementById('camLive').classList.remove('hidden');
+  const gt=lastZoneThumb(),g=document.getElementById('ghost'),go=document.getElementById('ghostOp'),gh=document.getElementById('ghostHint');
+  if(gt){g.src=gt;g.style.opacity=.35;go.value=35;g.classList.remove('hidden');go.classList.remove('hidden');gh.classList.remove('hidden');}
+  else{g.classList.add('hidden');go.classList.add('hidden');gh.classList.add('hidden');}
   openCam().catch(e=>{alert("Caméra inaccessible : "+(e.message||e)+"\n\n(Sur PC, ouvre l'appli via le lien https:// — pas le fichier local — et autorise la caméra.)");cancelLiveCam();});
 }
+function lastZoneThumb(){const z=Z();if(!z)return null;const ss=sortSess(z);for(let i=ss.length-1;i>=0;i--){const m=ss[i].mesures;if(m&&m.length)return m[m.length-1].thumb;}return null;}
+function setGhostOp(v){document.getElementById('ghost').style.opacity=v/100;}
 async function openCam(){
   if(camStream)camStream.getTracks().forEach(t=>t.stop());
   const id=document.getElementById('camSel').value;
@@ -695,6 +709,7 @@ function stopLiveCam(){
   if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
   const v=document.getElementById('camVid');if(v)v.srcObject=null;
   document.getElementById('camLive').classList.add('hidden');
+  ['ghost','ghostOp','ghostHint'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
 }
 function cancelLiveCam(){stopLiveCam();showPhotoChoice();}
 function loadImgSrc(src){
