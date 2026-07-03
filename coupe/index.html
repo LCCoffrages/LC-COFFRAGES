@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coupe du Monde 2026 — Organigramme + Pronostics</title>
+<style>
+  :root{ --gold:#f4c430; --c:rgba(244,196,48,.5); --win:#19c46a; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",system-ui,sans-serif;color:#eaf5ee;
+    background:radial-gradient(1200px 600px at 50% -10%,#0e8f4d22,transparent),linear-gradient(160deg,#06271a,#041a12 60%,#020d09);
+    min-height:100vh;padding:0 0 40px}
+  header{text-align:center;padding:24px 16px 4px}
+  .cup{font-size:42px;filter:drop-shadow(0 6px 14px #000a)}
+  h1{font-size:22px;font-weight:800;background:linear-gradient(90deg,#fff,var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:#9fd9b8;font-size:12.5px;margin-top:3px}
+  .leg{margin-top:9px;font-size:12px;color:#cfe9da}
+  .leg b{display:inline-flex;align-items:center;gap:5px;margin:0 9px}
+  .sq{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .scroll{overflow:auto;padding:10px 16px}
+  .labels{display:flex;min-width:1120px;max-width:1180px;margin:8px auto 0;padding:0 4px}
+  .labels div{flex:1;text-align:center;font-size:11px;letter-spacing:1px;color:var(--gold);font-weight:700;text-transform:uppercase}
+  .labels .lc{flex:0 0 150px}
+  .bracket{display:flex;height:1360px;min-width:1120px;max-width:1180px;margin:0 auto}
+  .round{display:flex;flex-direction:column;justify-content:space-around;flex:1}
+  .r-champ{flex:0 0 150px;align-items:center;justify-content:center}
+  .match{position:relative;display:flex;flex-direction:column;gap:2px;padding:0 14px}
+  .team{display:flex;align-items:center;gap:6px;background:#ffffff0d;border:1px solid #ffffff1f;border-radius:6px;
+        padding:4px 7px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .team .fl{font-size:14px;min-width:18px}
+  .team .sc{margin-left:auto;font-size:10.5px;font-weight:800;color:#bff0d2}
+  .team .sc.p{color:#f4c430cc;font-style:italic;font-weight:700}
+  .team.win{background:linear-gradient(90deg,#19c46a33,#ffffff10);border-color:var(--win);color:#fff}        /* RÉEL */
+  .team.pred{background:linear-gradient(90deg,#f4c43030,#ffffff0d);border-color:var(--gold);color:#fff}      /* PRONO */
+  .team.win .nm,.team.pred .nm{font-weight:800}
+  .team.lose{opacity:.4}
+  .round:not(.r-fin):not(.r-champ) .match::after{content:"";position:absolute;left:100%;top:50%;width:14px;height:2px;background:var(--c)}
+  .round:not(.r-16):not(.r-champ) .match::before{content:"";position:absolute;right:100%;top:50%;width:14px;height:2px;background:var(--c)}
+  .r-16 .match:nth-child(odd)::before{content:"";position:absolute;left:calc(100% + 14px);right:auto;top:50%;width:2px;height:85px;background:var(--c)}
+  .r-8  .match:nth-child(odd)::before{content:"";position:absolute;left:calc(100% + 14px);right:auto;top:50%;width:2px;height:170px;background:var(--c)}
+  .r-q  .match:nth-child(odd)::before{content:"";position:absolute;left:calc(100% + 14px);right:auto;top:50%;width:2px;height:340px;background:var(--c)}
+  .r-d  .match:nth-child(odd)::before{content:"";position:absolute;left:calc(100% + 14px);right:auto;top:50%;width:2px;height:680px;background:var(--c)}
+  .crown{font-size:36px;filter:drop-shadow(0 4px 10px #000)}
+  .cbox{background:linear-gradient(135deg,#f4c43040,#19c46a22);border:2px solid var(--gold);border-radius:13px;padding:14px 12px;margin-top:6px;text-align:center;box-shadow:0 0 26px #f4c43033}
+  .cbox .ttl{font-size:10px;letter-spacing:1px;color:#fff8e0}
+  .cbox .nm{font-size:17px;font-weight:800;margin-top:3px}
+  .cbox .st{font-size:13px;margin-top:2px}
+  .analyse{max-width:760px;margin:24px auto 0;padding:0 18px}
+  .analyse h2{font-size:17px;margin-bottom:10px;text-align:center;color:var(--gold)}
+  .acard{background:#ffffff0a;border:1px solid #ffffff1f;border-radius:14px;padding:16px 18px}
+  .acard li{list-style:none;font-size:13.5px;line-height:1.6;padding:6px 0;border-bottom:1px dashed #ffffff14}
+  .acard li:last-child{border-bottom:0}
+  .acard b{color:#fff}
+  .note{max-width:900px;margin:16px auto 0;padding:0 18px;font-size:12px;color:#8fb8a4;text-align:center;line-height:1.6;font-style:italic}
+</style>
+</head>
+<body>
+<header>
+  <div class="cup">🏆</div>
+  <h1>COUPE DU MONDE 2026 — TABLEAU + PRONOSTICS</h1>
+  <div class="sub">🇺🇸🇨🇦🇲🇽 · base RÉELLE (13 des 16es joués) + mes pronos jusqu'au sacre</div>
+  <div class="leg">
+    <b><span class="sq" style="background:var(--win)"></span> résultat réel</b>
+    <b><span class="sq" style="background:var(--gold)"></span> mon pronostic 🔮 (scores dorés en italique = prévisions)</b>
+  </div>
+</header>
+
+<div class="scroll">
+<div class="labels">
+  <div>16es de finale</div><div>8es</div><div>Quarts</div><div>Demis</div><div>Finale</div><div class="lc">🏆</div>
+</div>
+
+<div class="bracket">
+
+  <!-- 16es (ordre = vrai tableau FIFA) -->
+  <div class="round r-16">
+    <div class="match"><div class="team win"><span class="fl">🇨🇦</span><span class="nm">Canada</span><span class="sc">1</span></div><div class="team lose"><span class="fl">🇿🇦</span><span class="nm">Afrique Sud</span><span class="sc">0</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇳🇱</span><span class="nm">Pays-Bas</span><span class="sc">1(2)</span></div><div class="team win"><span class="fl">🇲🇦</span><span class="nm">Maroc</span><span class="sc">1(3)</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇩🇪</span><span class="nm">Allemagne</span><span class="sc">1(3)</span></div><div class="team win"><span class="fl">🇵🇾</span><span class="nm">Paraguay</span><span class="sc">1(4)</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇫🇷</span><span class="nm">France</span><span class="sc">3</span></div><div class="team lose"><span class="fl">🇸🇪</span><span class="nm">Suède</span><span class="sc">0</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇵🇹</span><span class="nm">Portugal</span><span class="sc">2</span></div><div class="team lose"><span class="fl">🇭🇷</span><span class="nm">Croatie</span><span class="sc">1</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇪🇸</span><span class="nm">Espagne</span><span class="sc">3</span></div><div class="team lose"><span class="fl">🇦🇹</span><span class="nm">Autriche</span><span class="sc">0</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇲🇽</span><span class="nm">Mexique</span><span class="sc">2</span></div><div class="team lose"><span class="fl">🇪🇨</span><span class="nm">Équateur</span><span class="sc">0</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🏴</span><span class="nm">Angleterre</span><span class="sc">2</span></div><div class="team lose"><span class="fl">🇨🇩</span><span class="nm">RD Congo</span><span class="sc">1</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇧🇷</span><span class="nm">Brésil</span><span class="sc">2</span></div><div class="team lose"><span class="fl">🇯🇵</span><span class="nm">Japon</span><span class="sc">1</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇨🇮</span><span class="nm">Côte d'Iv.</span><span class="sc">1</span></div><div class="team win"><span class="fl">🇳🇴</span><span class="nm">Norvège</span><span class="sc">2</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇺🇸</span><span class="nm">USA</span><span class="sc">2</span></div><div class="team lose"><span class="fl">🇧🇦</span><span class="nm">Bosnie</span><span class="sc">0</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇧🇪</span><span class="nm">Belgique</span><span class="sc">3 ap</span></div><div class="team lose"><span class="fl">🇸🇳</span><span class="nm">Sénégal</span><span class="sc">2</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇦🇺</span><span class="nm">Australie</span><span class="sc p">0</span></div><div class="team pred"><span class="fl">🇪🇬</span><span class="nm">Égypte</span><span class="sc p">2</span></div></div>
+    <div class="match"><div class="team pred"><span class="fl">🇦🇷</span><span class="nm">Argentine</span><span class="sc p">3</span></div><div class="team lose"><span class="fl">🇨🇻</span><span class="nm">Cap-Vert</span><span class="sc p">0</span></div></div>
+    <div class="match"><div class="team pred"><span class="fl">🇨🇴</span><span class="nm">Colombie</span><span class="sc p">2</span></div><div class="team lose"><span class="fl">🇬🇭</span><span class="nm">Ghana</span><span class="sc p">1</span></div></div>
+    <div class="match"><div class="team win"><span class="fl">🇨🇭</span><span class="nm">Suisse</span><span class="sc">2</span></div><div class="team lose"><span class="fl">🇩🇿</span><span class="nm">Algérie</span><span class="sc">0</span></div></div>
+  </div>
+
+  <!-- 8es (affiches officielles, 4-7 juillet) -->
+  <div class="round r-8">
+    <div class="match"><div class="team lose"><span class="fl">🇨🇦</span><span class="nm">Canada</span><span class="sc p">0</span></div><div class="team pred"><span class="fl">🇲🇦</span><span class="nm">Maroc</span><span class="sc p">1</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇵🇾</span><span class="nm">Paraguay</span><span class="sc p">0</span></div><div class="team pred"><span class="fl">🇫🇷</span><span class="nm">France</span><span class="sc p">2</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇵🇹</span><span class="nm">Portugal</span><span class="sc p">1</span></div><div class="team pred"><span class="fl">🇪🇸</span><span class="nm">Espagne</span><span class="sc p">2</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇲🇽</span><span class="nm">Mexique</span><span class="sc p">1</span></div><div class="team pred"><span class="fl">🏴</span><span class="nm">Angleterre</span><span class="sc p">2</span></div></div>
+    <div class="match"><div class="team pred"><span class="fl">🇧🇷</span><span class="nm">Brésil</span><span class="sc p">3</span></div><div class="team lose"><span class="fl">🇳🇴</span><span class="nm">Norvège</span><span class="sc p">1</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇺🇸</span><span class="nm">USA</span><span class="sc p">1</span></div><div class="team pred"><span class="fl">🇧🇪</span><span class="nm">Belgique</span><span class="sc p">2</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇪🇬</span><span class="nm">Égypte</span><span class="sc p">0</span></div><div class="team pred"><span class="fl">🇦🇷</span><span class="nm">Argentine</span><span class="sc p">2</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇨🇴</span><span class="nm">Colombie</span><span class="sc p">1</span></div><div class="team pred"><span class="fl">🇨🇭</span><span class="nm">Suisse</span><span class="sc p">2</span></div></div>
+  </div>
+
+  <!-- QUARTS (9-12 juillet) -->
+  <div class="round r-q">
+    <div class="match"><div class="team lose"><span class="fl">🇲🇦</span><span class="nm">Maroc</span><span class="sc p">0</span></div><div class="team pred"><span class="fl">🇫🇷</span><span class="nm">France</span><span class="sc p">1</span></div></div>
+    <div class="match"><div class="team pred"><span class="fl">🇪🇸</span><span class="nm">Espagne</span><span class="sc p">2 ap</span></div><div class="team lose"><span class="fl">🏴</span><span class="nm">Angleterre</span><span class="sc p">1</span></div></div>
+    <div class="match"><div class="team pred"><span class="fl">🇧🇷</span><span class="nm">Brésil</span><span class="sc p">2</span></div><div class="team lose"><span class="fl">🇧🇪</span><span class="nm">Belgique</span><span class="sc p">1</span></div></div>
+    <div class="match"><div class="team pred"><span class="fl">🇦🇷</span><span class="nm">Argentine</span><span class="sc p">2</span></div><div class="team lose"><span class="fl">🇨🇭</span><span class="nm">Suisse</span><span class="sc p">0</span></div></div>
+  </div>
+
+  <!-- DEMIS (14-15 juillet) -->
+  <div class="round r-d">
+    <div class="match"><div class="team pred"><span class="fl">🇫🇷</span><span class="nm">France</span><span class="sc p">2</span></div><div class="team lose"><span class="fl">🇪🇸</span><span class="nm">Espagne</span><span class="sc p">1</span></div></div>
+    <div class="match"><div class="team lose"><span class="fl">🇧🇷</span><span class="nm">Brésil</span><span class="sc p">1(3)</span></div><div class="team pred"><span class="fl">🇦🇷</span><span class="nm">Argentine</span><span class="sc p">1(4)</span></div></div>
+  </div>
+
+  <!-- FINALE (19 juillet) -->
+  <div class="round r-fin">
+    <div class="match"><div class="team pred"><span class="fl">🇫🇷</span><span class="nm">France</span><span class="sc p">3</span></div><div class="team lose"><span class="fl">🇦🇷</span><span class="nm">Argentine</span><span class="sc p">2</span></div></div>
+  </div>
+
+  <!-- CHAMPION -->
+  <div class="round r-champ">
+    <div class="crown">👑</div>
+    <div class="cbox"><div class="ttl">MON CHAMPION 🔮</div><div class="nm">🇫🇷 France</div><div class="st">🌟🌟🌟</div></div>
+  </div>
+
+</div>
+</div>
+
+<div class="analyse">
+  <h2>🔮 Le scénario selon moi</h2>
+  <div class="acard">
+    <li>🇫🇷🇵🇾 <b>8e France–Paraguay</b> (sam. 4/7, 23h, M6/beIN, Philadelphie sous canicule) : le mur paraguayen a eu l'Allemagne, mais pas d'Mbappé en face. La France passe.</li>
+    <li>🇲🇦 <b>Le Maroc</b> continue son conte de fées (comme 2022) : sort le Canada chez lui, mais bute en quart… sur la France, comme en demie 2022.</li>
+    <li>🇵🇹🇪🇸 <b>Le 8e Portugal–Espagne</b> (lun. 6/7), c'est l'affiche : l'Espagne (championne d'Europe 2024) passe grâce à son collectif.</li>
+    <li>🇪🇸 <b>Demie France–Espagne</b> : le choc des deux meilleures nations d'Europe. La France passe — profondeur d'effectif + Mbappé dans les grands matchs.</li>
+    <li>🇦🇷 <b>L'Argentine</b> (championne en titre) sort le Brésil dans un Superclásico de demie, mais…</li>
+    <li>🏆 <b>Finale France–Argentine, le 19 juillet</b> : le remake de 2022. Cette fois la France prend sa <b>revanche</b> et décroche sa <b>3ᵉ étoile</b>. 🇫🇷🌟🌟🌟</li>
+  </div>
+</div>
+
+<p class="note">
+  🟢 13 résultats RÉELS + croisements officiels du tableau (source FIFA/Foot Mercato — 3 juillet 2026) · 🟡 le reste = mes pronostics argumentés.<br>
+  Il reste 3 matchs de 16es cette nuit : Australie–Égypte, Argentine–Cap-Vert, Colombie–Ghana.<br>
+  Mes pronos 16es : <b>9/9 sur les matchs joués</b> 😎 — reviens, je réajuste au fil des vrais matchs ! ⚽
+</p>
+</body>
+</html>
