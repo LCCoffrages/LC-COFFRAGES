@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="build-id" content="20261021-175847">
+    <meta name="build-id" content="20261021-180522">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -657,6 +657,16 @@
         if (!deuxAngles) dessinerBras(BA, yBas, 1, 1);
         dessinerBras(NL - BA, yBas, -1, 1);                     // bas droite
 
+        // Bouts de CP dans les angles interieurs, contre la traverse, pour que le cadre ne bouge pas
+        // (Kevin, 21/10/2026) : 4 en fenetre, 2 en porte (pas de traverse en bas)
+        const CALE_L = 0.10, CALE_E = 0.015, CALE = "#2b2b2b";
+        rect(BA, NH - BA - CALE_E, BA + CALE_L, NH - BA, CALE);
+        rect(NL - BA - CALE_L, NH - BA - CALE_E, NL - BA, NH - BA, CALE);
+        if (type == "4") {
+            rect(BA, BA, BA + CALE_L, BA + CALE_E, CALE);
+            rect(NL - BA - CALE_L, BA, NL - BA, BA + CALE_E, CALE);
+        }
+
         // Renforts verticaux : planches 27x145 vues a plat, par-dessus
         // porte : les verticaux descendent jusqu'en bas du mannequin (Kevin, 21/10/2026)
         rv.forEach(x => rect(x - EP_RV / 2, (type == "3") ? 0 : BA, x + EP_RV / 2, NH - BA, BOIS_FONCE));
@@ -717,7 +727,7 @@
         html += `
             <div class="ligne-prep">
                 <span class="nom">Bras de force</span>
-                <span class="valeur">${nbBras ? `${nbBras} <small>×</small> ${brasCm} <small>cm</small>` : '—'}</span>
+                <span class="valeur">${nbBras ? `${brasCm} <small>cm</small>` : '—'}</span>
                 ${deuxAngles && nbBras ? '<span class="detail attention">Dans 2 angles seulement : haut gauche et bas droite</span>' : ''}
                 ${brasSurMesure && nbBras ? '<span class="detail attention">À couper sur mesure (longueur pointe à pointe)</span>' : ''}
             </div>`;
@@ -731,6 +741,11 @@
                     : `Indiquez l'épaisseur pour avoir la longueur`}${type == "3" ? ` · dont celui du bas à ${fr(Math.round(renfortBas * 100))} cm` : ''}</span>` : ''}
             </div>`;
         html += `
+            <div class="ligne-prep">
+                <span class="nom">Bouts de CP dans les angles</span>
+                <span class="valeur">${type == "3" ? 2 : 4}</span>
+                <span class="detail">Contre la traverse, pour que le cadre ne bouge pas</span>
+            </div>
             <div class="ligne-prep">
                 <span class="nom">Renforts verticaux</span>
                 <span class="valeur">${nb_v}</span>
