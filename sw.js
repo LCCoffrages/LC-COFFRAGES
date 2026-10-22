@@ -1,8 +1,8 @@
-// Service Worker LC Coffrages v4
+// Service Worker LC Coffrages v5
 // Strategie : network-first stricte pour HTML, cache pour assets
 // Bumper le numero de cache force iOS PWA a tout reinstaller
 
-const CACHE = 'lc-coffrages-v4';
+const CACHE = 'lc-coffrages-v5';
 const ASSETS = [
   './',
   './index.html',

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="build-id" content="20261021-180522">
+    <meta name="build-id" content="20261022-122320">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -608,7 +608,7 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.setTransform(view.zoom, 0, 0, view.zoom, view.panX, view.panY);
 
-        const mG = 30, mD = 230, mH = 230, mB = 105;          // place pour les cotes en haut et a droite
+        const mG = 30, mD = 330, mH = 330, mB = 105;          // place pour les cotes en haut et a droite
         const yCPbas = (type == "4") ? -CP : 0;              // CP en bas seulement en 4 faces
         const scale = Math.min((canvas.width - mG - mD) / L, (canvas.height - mH - mB) / H);
         const startX = mG + ((canvas.width - mG - mD) - L * scale) / 2 + CP * scale;
@@ -700,12 +700,47 @@
                 ctx.fillText(txt, 0, -10); ctx.restore();
             }
         }
-        // detail des renforts (s'il y en a), puis la cote totale
+        // cotes cumulees : depuis le bord (bas / cote gauche) jusqu'a l'axe de chaque renfort (Kevin, 22/10/2026)
+        function cumul(vals, horizontal, decal) {  // vals : positions en m, croissantes, sans le 0
+            ctx.strokeStyle = TRAIT; ctx.lineWidth = 2; ctx.fillStyle = TRAIT;
+            ctx.font = "600 46px Inter, Arial, sans-serif"; ctx.textAlign = "center";
+            const P = v => horizontal ? [toX(v), toY(NH + CP) - decal] : [toX(NL + CP) + decal, toY(v)];
+            [0, ...vals].forEach(v => {            // lignes de rappel
+                const [px, py] = P(v);
+                ctx.beginPath();
+                if (horizontal) { ctx.moveTo(px, toY(NH + CP) - 6); ctx.lineTo(px, py - 8); }
+                else { ctx.moveTo(toX(NL + CP) + 6, py); ctx.lineTo(px + 8, py); }
+                ctx.stroke();
+            });
+            const [x0, y0] = P(0), [xn, yn] = P(vals[vals.length - 1]);
+            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(xn, yn); ctx.stroke();
+            ctx.beginPath(); ctx.arc(x0, y0, 9, 0, 2 * Math.PI); ctx.fill();          // origine : le bord du mannequin
+            const a = Math.atan2(yn - y0, xn - x0);
+            const occupe = [];                                  // largeur : textes droits, remontes d'un cran s'ils se touchent
+            vals.forEach(v => {
+                const [px, py] = P(v);
+                fleche(px, py, a);
+                const txt = String(mm(v));
+                ctx.save();
+                if (horizontal) {                               // largeur : lisible sans tourner le telephone
+                    const lw = ctx.measureText(txt).width;
+                    let rang = 0;
+                    while (occupe.some(o => o.rang === rang && Math.abs(o.x - px) < (o.lw + lw) / 2 + 12)) rang++;
+                    occupe.push({ x: px, lw, rang });
+                    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+                    ctx.fillText(txt, px, py - 12 - rang * 52);
+                } else {                                        // hauteur : en travers, au bout de sa fleche
+                    ctx.translate(px, py); ctx.textBaseline = "middle"; ctx.textAlign = "left";
+                    ctx.fillText(txt, 16, 0);
+                }
+                ctx.restore();
+            });
+        }
         const rhTries = rh.slice().sort((a, b) => a - b);
-        if (rv.length) chaine([0, ...rv, NL], true, 62);
-        chaine([0, NL], true, rv.length ? 158 : 62);
-        if (rhTries.length) chaine([0, ...rhTries, NH], false, 66);
-        chaine([0, NH], false, rhTries.length ? 166 : 66);
+        if (rv.length) cumul(rv, true, 62);
+        chaine([0, NL], true, rv.length ? 240 : 62);
+        if (rhTries.length) cumul(rhTries, false, 66);
+        chaine([0, NH], false, rhTries.length ? 240 : 66);
 
         ctx.font = "500 34px Inter, Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#2b2b2b";
         ctx.fillText(sansFace ? "Sans face coffrante — " + mm(L) + " x " + mm(H)
