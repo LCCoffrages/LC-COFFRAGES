@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bati Chablais – Annotations de plans</title>
+<link rel="icon" href="images/logo_bati_chablais.svg">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- exports fabriques dans la page (gratuit, rien n'est envoye sur Internet) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" defer></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" defer></script>
+<script src="regles.js"></script>
+<script src="export.js" defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="images/chantier_accueil.jpg"><link rel="preload" as="image" href="images/logo_bati_chablais.svg">
+<style>
+:root{--marine:#1b2a7a;--marine2:#2a3b96;--jaune:#f5d000;--fond:#eef0f4;--carte:#fff;--bord:#e1e4ea;--txt:#1d2430;--doux:#6b7686}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;font:14px "Segoe UI",system-ui,sans-serif;background:var(--fond);color:var(--txt);display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--marine);color:#fff}
+header img{height:40px;border-radius:6px}.titre{font-weight:700;font-size:15px}
+select,.btn{font:600 13px "Segoe UI";border-radius:9px;border:0;padding:9px 13px;cursor:pointer}
+select{background:var(--marine2);color:#fff;max-width:420px}
+.btn.clair{background:var(--marine2);color:#fff}.btn.go{background:var(--jaune);color:var(--marine);box-shadow:0 6px 18px #f5d00055}
+.btn:disabled{opacity:.5;cursor:wait}.droite{margin-left:auto;display:flex;gap:8px;align-items:center}
+.corps{flex:1;display:grid;grid-template-columns:64px 1fr 560px;min-height:0}
+nav{background:var(--carte);border-right:1px solid var(--bord);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:5px;overflow:auto}
+nav .o{width:46px;height:44px;border-radius:11px;display:grid;place-items:center;font-size:20px;cursor:pointer;user-select:none}
+nav .o:hover{background:#f2f4f8}nav .o.on{background:#e3e7fb;box-shadow:inset 0 0 0 2px var(--marine)}
+nav hr{width:38px;border:0;border-top:1px solid var(--bord);margin:4px 0}
+.coul{width:22px;height:22px;border-radius:50%;cursor:pointer;border:3px solid #fff;box-shadow:0 0 0 1px var(--bord)}.coul.on{box-shadow:0 0 0 2px var(--marine)}
+#vue{position:relative;overflow:auto;background:#d9dde5}
+#feuille{position:relative;margin:30px auto;box-shadow:0 10px 40px #0003;background:#fff}
+#feuille canvas{display:block}#calque{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#zoom{position:fixed;left:84px;bottom:16px;background:var(--carte);border-radius:12px;box-shadow:0 6px 20px #0002;display:flex;align-items:center;gap:4px;padding:4px;z-index:5}
+#zoom button{border:0;background:transparent;font:700 16px "Segoe UI";width:34px;height:32px;border-radius:8px;cursor:pointer}#zoom button:hover{background:#f2f4f8}#zoom span{min-width:52px;text-align:center;font-weight:600;color:var(--doux)}
+aside{background:var(--carte);border-left:1px solid var(--bord);display:flex;flex-direction:column;min-height:0}
+.ong{display:flex;border-bottom:1px solid var(--bord)}.ong div{flex:1;text-align:center;padding:12px;font-weight:600;color:var(--doux);cursor:pointer}.ong div.on{color:var(--txt);box-shadow:inset 0 -3px var(--jaune)}
+#resume{margin:12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--marine),var(--marine2));color:#fff;line-height:1.5;display:none}
+#resume h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--jaune)}
+#liste{overflow:auto;padding:12px;display:flex;flex-direction:column;gap:9px;flex:1}
+.rem{border:1px solid var(--bord);border-radius:12px;padding:10px;display:grid;grid-template-columns:28px 1fr 22px;gap:8px;cursor:pointer;align-items:start}
+.rem:hover{border-color:var(--marine2)}.rem.sel{box-shadow:0 0 0 2px var(--marine)}
+.rem .n{width:24px;height:24px;border-radius:50%;color:#fff;font:700 12px "Segoe UI";display:grid;place-items:center}
+.rem .t{font-weight:600;line-height:1.35}.rem .m{font-size:12px;color:var(--doux);margin-top:3px}.rem .x{color:#b4bcc8;cursor:pointer;text-align:center}.rem .x:hover{color:#d33}
+.etiq{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:6px}
+.vide{color:var(--doux);text-align:center;padding:30px 10px;line-height:1.6}
+.tab{width:100%;border-collapse:collapse;font-size:13px}.tab th{background:var(--marine);color:#fff;text-align:left;padding:7px 6px;font-weight:600;position:sticky;top:0}
+.tab td{padding:7px 6px;border-bottom:1px solid var(--bord)}.tab td.c{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}.tab td.nb{color:var(--doux)}
+.tab td.ed{cursor:text;border-radius:4px}.tab td.ed:hover{outline:1px dashed #b7c0e6}.tab td.ed:focus{outline:2px solid var(--marine);background:#fff}
+.tab td.verif{background:#fff1d6;color:#b45309}
+.tab tbody tr[data-id]{cursor:pointer}.tab tbody tr[data-id]:hover td{background:#f3f5fb}.tab tr.sel td{background:#fff7c2}.tab tr.sous td{font-size:12px;color:var(--doux);border-bottom:1px solid var(--bord);padding-top:0}
+.export{display:flex;flex-wrap:wrap;gap:7px;padding:12px;border-top:1px solid var(--bord)}.export .btn{flex:1 1 40%;background:var(--fond);color:var(--txt);border:1px solid var(--bord)}
+#attente{position:fixed;inset:0;background:#0005;display:none;place-items:center;z-index:20}#attente div{background:#fff;padding:22px 28px;border-radius:14px;font-weight:600;display:flex;gap:12px;align-items:center}
+.spin{width:20px;height:20px;border:3px solid #ccd;border-top-color:var(--marine);border-radius:50%;animation:t .8s linear infinite}@keyframes t{to{transform:rotate(360deg)}}
+#modale{position:fixed;inset:0;background:#0005;display:none;place-items:center;z-index:30}
+#modale .boite{background:#fff;border-radius:16px;padding:20px;width:min(460px,92vw);box-shadow:0 20px 60px #0004}
+#modale h3{margin:0 0 12px}#modale textarea{width:100%;height:90px;border:1px solid var(--bord);border-radius:10px;padding:10px;font:14px "Segoe UI"}
+.tampons{display:flex;flex-wrap:wrap;gap:8px}.tampons button{border:2px solid;background:#fff;border-radius:8px;padding:8px 12px;font:800 13px "Segoe UI";cursor:pointer}
+.act{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+#toast{position:fixed;right:18px;bottom:30px;padding:12px 16px;border-radius:10px;color:#fff;font-weight:600;display:none;z-index:40;max-width:420px}
+.signe{position:fixed;right:14px;bottom:4px;font:italic 600 17px "Cormorant Garamond",Georgia,serif;color:#7b86a0;z-index:4}
+/* Ecran d'accueil 5 s : logo Bati Chablais + signature */
+/* Accueil dans l'esprit de bati-chablais.com : photo de chantier, voile bleu nuit, logo vectoriel, signature manuscrite */
+#accueil{position:fixed;inset:0;z-index:100;overflow:hidden;background:#020f20;transition:opacity .8s ease,visibility .8s}
+#accueil .photo{position:absolute;inset:-4%;background:url(images/chantier_accueil.jpg) center/cover no-repeat;animation:zoomlent 7s ease-out both}
+#accueil .voile{position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,15,32,.35) 0%,rgba(2,15,32,.55) 45%,rgba(2,15,32,.92) 100%)}
+#accueil .centre{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:0 24px}
+#accueil .logo{width:min(440px,72vw);filter:drop-shadow(0 10px 30px rgba(0,0,0,.45));animation:monte 1.2s .2s cubic-bezier(.2,.8,.2,1) both}
+#accueil .trait{width:0;height:3px;background:#fff000;border-radius:2px;animation:trait 1s .9s ease-out forwards}
+#accueil .app{color:#fff;font:700 14px Montserrat,"Segoe UI",sans-serif;letter-spacing:.32em;text-transform:uppercase;opacity:0;animation:apparait .9s 1.2s ease-out forwards}
+#accueil .sig{color:#fff000;font:italic 600 44px "Cormorant Garamond",Georgia,serif;letter-spacing:.02em;text-shadow:0 2px 14px rgba(0,0,0,.5);opacity:0;animation:apparait 1.2s 1.7s ease-out forwards}
+#accueil .bas{position:absolute;bottom:26px;left:0;right:0;display:flex;justify-content:center}
+#accueil .bas i{width:180px;height:3px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden;position:relative}
+#accueil .bas i::after{content:"";position:absolute;inset:0;background:#fff000;transform-origin:left;animation:charge 5s linear forwards}
+#accueil.fin{opacity:0;visibility:hidden}
+@keyframes zoomlent{from{transform:scale(1.12)}to{transform:scale(1)}}
+@keyframes monte{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes trait{to{width:120px}}@keyframes apparait{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes charge{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+</style></head><body>
+<header><img src="images/logo_bati_chablais.svg" alt="Bati Chablais" style="height:38px;border-radius:0"><div class="titre">Annotations de plans</div>
+<select id="dossiers" title="Dossier" style="max-width:200px"></select><select id="plans" title="Plan"></select><button class="btn clair" id="btnImport">📂 Importer un PDF</button><input type="file" id="fic" accept="application/pdf" hidden>
+<div class="droite"><span id="infoPage" style="color:#c7cff5;font-size:13px"></span>
+<button class="btn clair" id="hAnnuler" title="Annuler (Ctrl+Z)" disabled>↶ Annuler</button><button class="btn clair" id="hRetablir" title="Rétablir (Ctrl+Y)" disabled>↷ Rétablir</button>
+<button class="btn clair" id="pPrec">◀</button><button class="btn clair" id="pSuiv">▶</button>
+<button class="btn go" id="btnSynth">✨ Faire la synthèse</button></div></header>
+<div class="corps">
+<nav id="outils">
+<div class="o" data-o="main" title="Se déplacer (ou clic droit / molette)">✋</div>
+<div class="o on" data-o="stylo" title="Stylo (écrire à la main)">✏️</div>
+<div class="o" data-o="surligneur" title="Surligneur">🖍️</div>
+<div class="o" data-o="nuage" title="Nuage de révision (tracer un cadre)">☁️</div>
+<div class="o" data-o="fleche" title="Flèche">↗️</div>
+<div class="o" data-o="note" title="Note tapée">💬</div>
+<div class="o" data-o="tampon" title="Tampon">✅</div>
+<div class="o" data-o="gomme" title="Gomme (cliquer sur une annotation)">🧽</div>
+<hr><div class="coul on" data-c="#e4572e" style="background:#e4572e"></div><div class="coul" data-c="#2563eb" style="background:#2563eb"></div>
+<div class="coul" data-c="#16a34a" style="background:#16a34a"></div><div class="coul" data-c="#7c3aed" style="background:#7c3aed"></div><div class="coul" data-c="#111827" style="background:#111827"></div>
+<hr><div class="o" id="annuler" title="Annuler (Ctrl+Z)">↶</div></nav>
+<section id="vue"><div id="feuille"><canvas id="toile"></canvas><svg id="calque" xmlns="http://www.w3.org/2000/svg"></svg></div></section>
+<aside><div class="ong"><div class="on" id="ongRem">Remarques (0)</div></div>
+<div id="resume"><h4>✨ Résumé</h4><div id="resumeTxt"></div></div>
+<label id="boiteChantier" style="display:none;margin:0 12px;font-size:12px;color:var(--doux)">Chantier (sur la synthèse)
+<input id="chantier" style="width:100%;margin-top:4px;padding:9px 11px;border:1px solid var(--bord);border-radius:9px;font:600 14px 'Segoe UI';color:var(--marine)"></label>
+<div id="liste"></div>
+<div class="export"><button class="btn" data-e="pdf">📄 Synthèse PDF</button><button class="btn" data-e="docx">📝 Word</button><button class="btn" data-e="xlsx">📊 Excel</button><button class="btn" data-e="pdf-annote">🖊️ PDF annoté</button></div>
+</aside></div>
+<div id="zoom"><button id="zM">−</button><span id="zV">100 %</span><button id="zP">+</button><button id="zF" title="Ajuster">⤢</button></div>
+<div id="attente"><div><span class="spin"></span><span id="attenteTxt" style="transition:opacity .25s;min-width:300px">Synthèse en cours…</span></div></div>
+<div id="modale"><div class="boite" id="boite"></div></div>
+<div id="toast"></div><div class="signe">By Sébastien REY</div>
+<div id="accueil"><div class="photo"></div><div class="voile"></div>
+<div class="centre"><img class="logo" src="images/logo_bati_chablais.svg" alt="Bati Chablais"><div class="trait"></div>
+<div class="app">Annotations &amp; synthèse de plans</div><div class="sig">By Sébastien REY</div></div>
+<div class="bas"><i></i></div></div>
+<script>setTimeout(()=>{const a=document.getElementById('accueil');a.classList.add('fin');setTimeout(()=>a.remove(),700)},5000)</script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $=id=>document.getElementById(id);
+const CAT={'À corriger':'#e4572e','À prévoir':'#2563eb','Question':'#7c3aed','Validé':'#16a34a','Info':'#6b7686'};
+const ICO={stylo:'✏️',surligneur:'🖍️',nuage:'☁️',fleche:'↗️',note:'💬',tampon:'✅'};
+const TAMPONS=[['OK','#16a34a'],['À REPRENDRE','#e4572e'],['À CHIFFRER','#2563eb'],['À VÉRIFIER','#7c3aed'],['VU','#111827']];
+let pdf=null,plan='',pageNo=1,page=null,vp1=null,zoom=1,ajuste=1,outil='stylo',couleur='#e4572e';
+let annots=[],synth=null,enCours=null,selection=null;
+
+function toast(t,ok=true){const e=$('toast');e.textContent=t;e.style.background=ok?'#16a34a':'#d33';e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',4500)}
+function attente(t){$('attente').style.display=t?'grid':'none';if(t)$('attenteTxt').textContent=t;if(!t)arreterSlogans()}
+// Pendant la synthese : petites phrases de chantier qui defilent (ordre au hasard, jamais deux fois de suite la meme)
+// Les regles du chantier passent dans l'ordre (une sur deux), entre deux phrases au hasard
+const REGLES=['Règle n°1 : le chef a toujours raison !','Règle n°2 : si le chef a tort, se référer à la règle n°1.',
+ 'Règle n°3 : le béton n\'attend pas. Le chef non plus.','Règle n°4 : une cote, ça ne se discute pas. Ça se vérifie (voir règle n°1).',
+ 'Règle n°5 : un plan lu sans café est un plan mal lu.','Règle n°6 : ce qui est coulé est coulé. Voir règle n°1.',
+ 'Règle n°7 : le compagnon a raison quand le chef est d\'accord (règle n°1).','Règle n°8 : en cas de doute, relire la règle n°1.'];
+let regle=0,tour=0;
+const SLOGANS=['On coule le béton, pas les délais…','Le chef relit les cotes. Deux fois.','Vibreur en marche, on tasse les idées…','Pause café autorisée : la toupie est en route.',
+ 'On décoffre la synthèse…','Niveau à bulle : calé. Tableau : en cours.','Les banches sont serrées, le tableau aussi.','On compte les faces… même celles du chef.',
+ 'Pas de fissure dans ce tableau, promis.','La grue monte les ouvertures une par une…','Mètre ruban déroulé, café chaud.','Coffrage propre, plan lu, on y est presque.',
+ 'On cherche l\'allège… elle était sous la palette.','Huile de décoffrage appliquée sur les données.','Un mannequin, deux mannequins… trois mannequins…',
+ 'Le béton prend, la synthèse aussi.','Contrôle qualité : le compagnon vérifie à l\'œil.','On aligne les repères au cordeau.','Ça vibre, ça coule, ça calcule.','Gants, casque, et c\'est parti pour le tableau.'];
+let minuteurSlogan=null,dernierSlogan=-1;
+function slogan(){let txt;
+ if(tour++%2===0){txt=REGLES[regle%REGLES.length];regle++}
+ else{let i;do{i=Math.floor(Math.random()*SLOGANS.length)}while(i===dernierSlogan&&SLOGANS.length>1);dernierSlogan=i;txt=SLOGANS[i]}
+ const e=$('attenteTxt');e.style.opacity=0;setTimeout(()=>{e.textContent=txt;e.style.opacity=1},250)}
+function lancerSlogans(){$('attente').style.display='grid';regle=0;tour=0;slogan();clearInterval(minuteurSlogan);minuteurSlogan=setInterval(slogan,3000)}
+function arreterSlogans(){clearInterval(minuteurSlogan);minuteurSlogan=null}
+// ---------- stockage dans le navigateur (IndexedDB) : plans, annotations, syntheses. Rien ne part sur Internet.
+const Stock={db:null,
+ async ouvrir(){if(this.db)return this.db;this.db=await new Promise((ok,ko)=>{const r=indexedDB.open('bati-chablais-annotations',1);
+  r.onupgradeneeded=()=>{const d=r.result;for(const s of['plans','annots','synth'])if(!d.objectStoreNames.contains(s))d.createObjectStore(s)};r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)});return this.db},
+ async lire(store,cle){const d=await this.ouvrir();return new Promise((ok,ko)=>{const r=d.transaction(store).objectStore(store).get(cle);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})},
+ async ecrire(store,cle,val){const d=await this.ouvrir();return new Promise((ok,ko)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).put(val,cle);t.oncomplete=()=>ok();t.onerror=()=>ko(t.error)})},
+ async effacer(store,cle){const d=await this.ouvrir();return new Promise((ok,ko)=>{const t=d.transaction(store,'readwrite');t.objectStore(store).delete(cle);t.oncomplete=()=>ok();t.onerror=()=>ko(t.error)})},
+ async cles(store){const d=await this.ouvrir();return new Promise((ok,ko)=>{const r=d.transaction(store).objectStore(store).getAllKeys();r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})}};
+
+// ---------- plans
+// Dossier puis plan ; tout plan importe est garde dans « Mes plans » (navigateur de ce PC)
+let dossiers={};
+async function listePlans(choisir){const cles=(await Stock.cles('plans')).map(String).sort((a,b)=>a.localeCompare(b,'fr'));dossiers={'Mes plans':cles};const noms=Object.keys(dossiers);
+ $('dossiers').innerHTML=noms.map(d=>`<option value="${esc(d)}">📁 ${esc(d)} (${dossiers[d].length})</option>`).join('');
+ let dos=noms.find(d=>choisir&&dossiers[d].includes(choisir))||(()=>{try{return localStorage.getItem('dossier')}catch(e){return null}})();
+ if(!noms.includes(dos))dos=noms.find(d=>dossiers[d].length)||noms[0];$('dossiers').value=dos||'';remplirPlans(choisir)}
+function remplirPlans(choisir){const l=dossiers[$('dossiers').value]||[];
+ $('plans').innerHTML=l.length?l.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join(''):'<option value="">(dossier vide : importez un PDF)</option>';
+ if(choisir&&l.includes(choisir))$('plans').value=choisir;if($('plans').value)ouvrir($('plans').value)}
+$('dossiers').onchange=()=>{try{localStorage.setItem('dossier',$('dossiers').value)}catch(e){}remplirPlans()};
+$('plans').onchange=()=>ouvrir($('plans').value);
+$('btnImport').onclick=()=>$('fic').click();
+$('fic').onchange=async e=>{const fichiers=[...e.target.files].filter(f=>/\.pdf$/i.test(f.name));if(!fichiers.length)return;attente('Import du plan…');
+ try{for(const f of fichiers)await Stock.ecrire('plans',f.name,await f.arrayBuffer());await listePlans(fichiers[0].name);toast(fichiers.length>1?fichiers.length+' plans importés':'Plan importé')}
+ catch(x){toast('Import impossible : '+x.message,false)}attente(false);e.target.value=''};
+async function ouvrir(nom){attente('Ouverture du plan…');try{plan=nom;const data=await Stock.lire('plans',nom);if(!data)throw new Error('plan introuvable');
+ pdf=await pdfjsLib.getDocument({data:new Uint8Array(data.slice(0))}).promise;pagesLues={};annots=(await Stock.lire('annots',nom))||[];passe=[];futur=[];etat=JSON.stringify(annots);
+ $('hAnnuler').disabled=$('hRetablir').disabled=true;synth=(await Stock.lire('synth',nom))||null;pageNo=1;await chargerPage(true)}catch(x){toast('Plan illisible : '+x.message,false)}attente(false)}
+async function chargerPage(ajuster){page=await pdf.getPage(pageNo);vp1=page.getViewport({scale:1});$('infoPage').textContent=`page ${pageNo} / ${pdf.numPages}`;
+ if(ajuster){const v=$('vue');ajuste=Math.min((v.clientWidth-60)/vp1.width,(v.clientHeight-60)/vp1.height);zoom=1}await rendre();liste()}
+$('pPrec').onclick=()=>{if(pdf&&pageNo>1){pageNo--;chargerPage(true)}};$('pSuiv').onclick=()=>{if(pdf&&pageNo<pdf.numPages){pageNo++;chargerPage(true)}};
+
+// ---------- rendu (canvas net + calque SVG en coordonnees du plan)
+let tache=null;
+async function rendre(){const s=ajuste*zoom,dpr=window.devicePixelRatio||1,vp=page.getViewport({scale:s});
+ const lim=Math.min(1,14000/Math.max(vp.width*dpr,vp.height*dpr));const vpr=page.getViewport({scale:s*dpr*lim});
+ const c=$('toile');c.width=Math.floor(vpr.width);c.height=Math.floor(vpr.height);c.style.width=vp.width+'px';c.style.height=vp.height+'px';
+ $('feuille').style.width=vp.width+'px';$('feuille').style.height=vp.height+'px';$('zV').textContent=Math.round(zoom*100)+' %';
+ if(tache)tache.cancel();tache=page.render({canvasContext:c.getContext('2d'),viewport:vpr});try{await tache.promise}catch(e){}
+ const svg=$('calque');svg.setAttribute('viewBox',`0 0 ${vp1.width} ${vp1.height}`);dessiner()}
+function zoomer(f,cx,cy){const v=$('vue'),r=v.getBoundingClientRect();cx=cx??r.width/2;cy=cy??r.height/2;const ax=(v.scrollLeft+cx)/(ajuste*zoom),ay=(v.scrollTop+cy)/(ajuste*zoom);
+ zoom=Math.max(.5,Math.min(8,zoom*f));rendre().then(()=>{v.scrollLeft=ax*ajuste*zoom-cx;v.scrollTop=ay*ajuste*zoom-cy})}
+$('zP').onclick=()=>zoomer(1.4);$('zM').onclick=()=>zoomer(1/1.4);$('zF').onclick=()=>{zoom=1;rendre()};
+// Molette = zoom sur le point vise (apercu immediat par CSS, rendu net 150 ms apres le dernier cran)
+let cumul=1,pointZ=null,minuteurZ=null;
+$('vue').addEventListener('wheel',e=>{if(!page)return;e.preventDefault();const v=$('vue'),r=v.getBoundingClientRect(),fe=$('feuille');
+ const f=e.deltaY<0?1.2:1/1.2,cible=Math.max(.5,Math.min(8,zoom*cumul*f));
+ if(cumul===1){pointZ=[e.clientX-r.left,e.clientY-r.top];fe.style.transformOrigin=`${v.scrollLeft+pointZ[0]-fe.offsetLeft}px ${v.scrollTop+pointZ[1]-fe.offsetTop}px`}
+ cumul=cible/zoom;fe.style.transform=`scale(${cumul})`;
+ clearTimeout(minuteurZ);minuteurZ=setTimeout(()=>{const f2=cumul;cumul=1;fe.style.transform='';zoomer(f2,pointZ[0],pointZ[1])},150)},{passive:false});
+
+// conversions : points PDF <-> unites du calque (viewport echelle 1)
+const versCalque=p=>vp1.convertToViewportPoint(p[0],p[1]);
+function versPdf(e){const svg=$('calque'),r=svg.getBoundingClientRect();const x=(e.clientX-r.left)/r.width*vp1.width,y=(e.clientY-r.top)/r.height*vp1.height;return vp1.convertToPdfPoint(x,y)}
+
+// ---------- dessin des annotations
+function pathTrait(t){return t.map((p,i)=>{const q=versCalque(p);return(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)}).join(' ')}
+function nuagePath(a,b){const x1=Math.min(a[0],b[0]),y1=Math.min(a[1],b[1]),x2=Math.max(a[0],b[0]),y2=Math.max(a[1],b[1]);const r=Math.max(8,Math.min(26,(x2-x1+y2-y1)/30));let d=`M${x1} ${y1}`;
+ const bord=(xa,ya,xb,yb)=>{const L=Math.hypot(xb-xa,yb-ya),n=Math.max(1,Math.round(L/(2*r)));for(let i=1;i<=n;i++){const x=xa+(xb-xa)*i/n,y=ya+(yb-ya)*i/n;d+=` A${L/n/2} ${L/n/2} 0 0 1 ${x} ${y}`}};
+ bord(x1,y1,x2,y1);bord(x2,y1,x2,y2);bord(x2,y2,x1,y2);bord(x1,y2,x1,y1);return d}
+function elem(a,num){const ep=a.type==='surligneur'?14:(a.epaisseur||2.5);let h='';
+ if(a.type==='stylo'||a.type==='surligneur')h=a.traits.map(t=>`<path d="${pathTrait(t)}" stroke="${a.couleur}" stroke-width="${ep}" fill="none" stroke-linecap="round" stroke-linejoin="round" ${a.type==='surligneur'?'opacity=".35"':''}/>`).join('');
+ else if(a.type==='nuage'){const p=versCalque(a.p1),q=versCalque(a.p2);h=`<path d="${nuagePath(p,q)}" stroke="${a.couleur}" stroke-width="3" fill="none"/>`}
+ else if(a.type==='fleche'){const p=versCalque(a.p1),q=versCalque(a.p2),ang=Math.atan2(q[1]-p[1],q[0]-p[0]),L=18;
+  h=`<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}" stroke="${a.couleur}" stroke-width="3"/><path d="M${q[0]} ${q[1]} L${q[0]-L*Math.cos(ang-.4)} ${q[1]-L*Math.sin(ang-.4)} L${q[0]-L*Math.cos(ang+.4)} ${q[1]-L*Math.sin(ang+.4)}Z" fill="${a.couleur}"/>`}
+ else if(a.type==='note'||a.type==='tampon'){const p=versCalque(a.p1),fs=a.type==='note'?16:22,w=Math.max(60,a.texte.length*fs*.6)+16,hh=fs*1.6;
+  h=a.type==='note'?`<rect x="${p[0]}" y="${p[1]-hh}" width="${w}" height="${hh}" rx="5" fill="#fff" stroke="${a.couleur}" stroke-width="2"/><text x="${p[0]+8}" y="${p[1]-hh*.32}" font-size="${fs}" fill="${a.couleur}" font-family="Segoe UI">${esc(a.texte)}</text>`
+   :`<g transform="rotate(-6 ${p[0]} ${p[1]})"><rect x="${p[0]}" y="${p[1]-hh}" width="${w}" height="${hh}" rx="5" fill="none" stroke="${a.couleur}" stroke-width="3"/><text x="${p[0]+8}" y="${p[1]-hh*.3}" font-size="${fs}" font-weight="800" fill="${a.couleur}" font-family="Segoe UI">${esc(a.texte)}</text></g>`}
+ const b=boite(a),q1=versCalque([b[0],b[3]]);
+ return `<g data-id="${a.id}" class="an">${h}${num?`<circle cx="${q1[0]-12}" cy="${q1[1]-12}" r="11" fill="${couleurNum(a)}"/><text x="${q1[0]-12}" y="${q1[1]-8}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" font-family="Segoe UI">${num}</text>`:''}${selection===a.id?`<rect x="${versCalque([b[0],b[3]])[0]-6}" y="${versCalque([b[0],b[3]])[1]-6}" width="${(b[2]-b[0])+12}" height="${(b[3]-b[1])+12}" fill="none" stroke="#1b2a7a" stroke-dasharray="6 4" stroke-width="2"/>`:''}</g>`}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function couleurNum(a){const r=synth&&synth.remarques.find(x=>x.id===a.id);return r?CAT[r.categorie]:'#1b2a7a'}
+function boite(a){let pts=[];if(a.traits)a.traits.forEach(t=>pts.push(...t));if(a.p1)pts.push(a.p1);if(a.p2)pts.push(a.p2);
+ if(a.type==='note'||a.type==='tampon'){const fs=a.type==='note'?16:22;pts.push([a.p1[0]+Math.max(60,a.texte.length*fs*.6)+16,a.p1[1]+fs*1.6])}
+ const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]}
+function dessiner(){const ici=annots.filter(a=>a.page===pageNo);$('calque').innerHTML=ici.map(a=>elem(a,annots.indexOf(a)+1)).join('')+(enCours?elem(enCours,0):'')}
+
+// ---------- saisie
+document.querySelectorAll('nav .o[data-o]').forEach(o=>o.onclick=()=>{outil=o.dataset.o;document.querySelectorAll('nav .o[data-o]').forEach(x=>x.classList.toggle('on',x===o));$('calque').style.cursor=outil==='main'?'grab':outil==='gomme'?'not-allowed':'crosshair'});
+document.querySelectorAll('.coul').forEach(c=>c.onclick=()=>{couleur=c.dataset.c;document.querySelectorAll('.coul').forEach(x=>x.classList.toggle('on',x===c))});
+let glisse=null;
+$('calque').addEventListener('pointerdown',e=>{if(!page)return;const v=$('vue');
+ // Clic droit : on repasse sur la main (et on peut deja glisser)
+ if(e.button===2&&outil!=='main')document.querySelector('nav .o[data-o="main"]').click();
+ if(outil==='main'||e.button===1||e.button===2){glisse={x:e.clientX,y:e.clientY,sl:v.scrollLeft,st:v.scrollTop};e.preventDefault();return}
+ const p=versPdf(e);e.target.setPointerCapture?.(e.pointerId);
+ if(outil==='gomme'){const g=e.target.closest('.an');if(g){annots=annots.filter(a=>a.id!==g.dataset.id);changement()}return}
+ if(outil==='stylo'||outil==='surligneur'){const der=annots[annots.length-1];
+  if(der&&der.type===outil&&der.page===pageNo&&der.couleur===couleur&&Date.now()-der.t<3500&&proche(der,p)){enCours=der;annots.pop()}
+  else enCours={id:'a'+Date.now().toString(36),type:outil,page:pageNo,couleur,traits:[],epaisseur:2.5};
+  enCours.traits.push([p]);enCours.t=Date.now()}
+ else if(outil==='nuage'||outil==='fleche')enCours={id:'a'+Date.now().toString(36),type:outil,page:pageNo,couleur,p1:p,p2:p};
+ else if(outil==='note')saisirNote(p);else if(outil==='tampon')choisirTampon(p);dessiner()});
+$('calque').addEventListener('pointermove',e=>{if(glisse){const v=$('vue');v.scrollLeft=glisse.sl-(e.clientX-glisse.x);v.scrollTop=glisse.st-(e.clientY-glisse.y);return}
+ if(!enCours)return;const p=versPdf(e);if(enCours.traits)enCours.traits[enCours.traits.length-1].push(p);else enCours.p2=p;dessiner()});
+$('calque').addEventListener('pointerup',()=>{glisse=null;if(!enCours)return;const a=enCours;enCours=null;
+ if(a.traits){a.t=Date.now();if(a.traits[a.traits.length-1].length<2)a.traits[a.traits.length-1].push([...a.traits[a.traits.length-1][0]].map(v=>v+.5))}
+ else if(Math.hypot(a.p2[0]-a.p1[0],a.p2[1]-a.p1[1])<4){dessiner();return}
+ annots.push(a);changement()});
+$('calque').addEventListener('contextmenu',e=>e.preventDefault());
+function proche(a,p){const b=boite(a),m=60;return p[0]>b[0]-m&&p[0]<b[2]+m&&p[1]>b[1]-m&&p[1]<b[3]+m}
+// Historique : un instantane avant chaque changement ; Annuler / Retablir s'y deplacent
+let passe=[],futur=[],etat='[]';
+function memoriser(){passe.push(etat);if(passe.length>100)passe.shift();futur=[];etat=JSON.stringify(annots)}
+function annuler(){if(!passe.length)return;futur.push(etat);etat=passe.pop();annots=JSON.parse(etat);changement(true)}
+function retablir(){if(!futur.length)return;passe.push(etat);etat=futur.pop();annots=JSON.parse(etat);changement(true)}
+$('annuler').onclick=annuler;$('hAnnuler').onclick=annuler;$('hRetablir').onclick=retablir;
+document.addEventListener('keydown',e=>{if($('modale').style.display.includes('grid')||!e.ctrlKey)return;if(e.key==='z'){e.preventDefault();annuler()}else if(e.key==='y'){e.preventDefault();retablir()}});
+function modale(html){$('boite').innerHTML=html;$('modale').style.display='grid'}function fermer(){$('modale').style.display='none'}
+function saisirNote(p){modale(`<h3>💬 Note</h3><textarea id="nt" placeholder="Votre remarque…"></textarea><div class="act"><button class="btn" onclick="fermer()">Annuler</button><button class="btn go" id="okN">Ajouter</button></div>`);
+ $('nt').focus();$('okN').onclick=()=>{const t=$('nt').value.trim();if(t){annots.push({id:'a'+Date.now().toString(36),type:'note',page:pageNo,couleur,p1:p,texte:t});changement()}fermer()}}
+function choisirTampon(p){modale(`<h3>✅ Tampon</h3><div class="tampons">${TAMPONS.map(([t,c])=>`<button style="color:${c};border-color:${c}" data-t="${t}" data-c="${c}">${t}</button>`).join('')}</div><div class="act"><button class="btn" onclick="fermer()">Annuler</button></div>`);
+ document.querySelectorAll('.tampons button').forEach(b=>b.onclick=()=>{annots.push({id:'a'+Date.now().toString(36),type:'tampon',page:pageNo,couleur:b.dataset.c,p1:p,texte:b.dataset.t});changement();fermer()})}
+
+// ---------- tableau des ouvertures (apres la synthese)
+// petit dessin de la forme (contour en cm, origine en bas a gauche) ; rectangle = pas de dessin
+function dessinForme(c,w=54,h=40){if(!c||c.length<3)return'';const xs=c.map(p=>p[0]),ys=c.map(p=>p[1]),x0=Math.min(...xs),y0=Math.min(...ys),dx=Math.max(...xs)-x0||1,dy=Math.max(...ys)-y0||1,k=Math.min((w-6)/dx,(h-6)/dy);
+ const pts=c.map(p=>`${(3+(p[0]-x0)*k).toFixed(1)},${(h-3-(p[1]-y0)*k).toFixed(1)}`).join(' ');return`<svg width="${w}" height="${h}" style="display:block"><polygon points="${pts}" fill="#fff7c2" stroke="#1b2a7a" stroke-width="1.5"/></svg>`}
+function tableau(){const grp=synth.groupes||[],autres=synth.remarques||[];
+ // cases modifiables : un clic pour corriger, la correction est gardee et part dans les exports
+ const ed=(g,i,k,cls='')=>`<td class="${cls} ed${(g.verif||[]).includes(k)?' verif':''}" contenteditable="true" spellcheck="false" data-g="${i}" data-k="${k}" title="${(g.verif||[]).includes(k)?'Mesurée sur le dessin : à vérifier':'Cliquer pour corriger'}">${esc(g[k]??'')}${(g.verif||[]).includes(k)?' ⚠':''}</td>`;
+ const ligne=(g,i)=>`<tr data-id="${g.ids[0]}" class="${g.ids.includes(selection)?'sel':''}">${ed(g,i,'quantite','c')}${ed(g,i,'reperes')}${ed(g,i,'type')}<td>${dessinForme(g.contour)}${g.forme&&g.forme!=='rectangle'?`<div class="m">${esc(g.forme)}</div>`:''}</td>${ed(g,i,'largeur','c')}${ed(g,i,'hauteur','c')}${ed(g,i,'epaisseur','c')}${ed(g,i,'faces','c')}</tr>${g.remarque?`<tr class="sous" data-id="${g.ids[0]}"><td></td><td colspan="7">${esc(g.remarque)}</td></tr>`:''}`;
+ $('liste').innerHTML=`<table class="tab"><thead><tr><th>Qté</th><th>Repères</th><th>Type</th><th>Forme</th><th>Larg. ml</th><th>Haut. ml</th><th>Ép. ml</th><th>Faces</th></tr></thead><tbody>${grp.length?grp.map(ligne).join(''):'<tr><td colspan="8" class="vide">Aucune ouverture relevée</td></tr>'}</tbody></table>
+ <div class="m" style="margin:4px 2px 0">Dimensions en ml. Cliquer une case pour la corriger · ⚠ = mesurée sur le dessin, à vérifier · clic sur le n° de ligne pour la voir sur le plan.</div>
+ ${autres.length?`<h4 style="margin:14px 2px 6px;color:#1b2a7a">Autres remarques</h4>`+autres.map(r=>`<div class="rem" data-id="${r.id}"><div class="n" style="background:${CAT[r.categorie]}">${r.num}</div><div><div class="t">${esc(r.texte)}</div><span class="etiq" style="background:${CAT[r.categorie]}22;color:${CAT[r.categorie]}">${r.categorie}</span></div><div></div></div>`).join(''):''}`;
+ document.querySelectorAll('.tab tbody tr[data-id], #liste .rem').forEach(d=>d.onclick=e=>{if(!e.target.closest('.ed'))aller(d.dataset.id)});
+ document.querySelectorAll('.tab td.ed').forEach(c=>{
+  c.onfocus=()=>{c.textContent=c.textContent.replace(' ⚠','');const r=document.createRange();r.selectNodeContents(c);const s=getSelection();s.removeAllRanges();s.addRange(r)};
+  c.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();c.blur()}if(e.key==='Escape'){c.dataset.annule=1;c.blur()}};
+  c.onblur=()=>{const g=synth.groupes[+c.dataset.g],k=c.dataset.k;if(!c.dataset.annule){const v=c.textContent.trim();
+    if(v!==String(g[k]??'')){g[k]=(k==='quantite'||k==='faces')&&/^\d+$/.test(v)?+v:v;g.verif=(g.verif||[]).filter(x=>x!==k);g.corrige=true;sauverSynth();toast('Corrigé.')}}
+   delete c.dataset.annule;tableau()}})}
+function sauverSynth(){if(!synth)return;Stock.ecrire('synth',plan,JSON.parse(JSON.stringify(synth))).catch(x=>toast('Enregistrement impossible : '+x.message,false))}
+
+// ---------- liste + enregistrement
+let minuteur=null;
+function changement(historique){if(!historique)memoriser();$('hAnnuler').disabled=!passe.length;$('hRetablir').disabled=!futur.length;if(synth)synth.perime=true;dessiner();liste();clearTimeout(minuteur);minuteur=setTimeout(()=>Stock.ecrire('annots',plan,annots.map(({t,...r})=>r)).catch(x=>toast('Enregistrement impossible : '+x.message,false)),600)}
+function liste(){$('ongRem').textContent=`Remarques (${annots.length})`;
+ $('resume').style.display=synth?'block':'none';if(synth)$('resumeTxt').textContent=synth.resume+(synth.perime?' (annotations modifiées depuis : refaites la synthèse)':'');
+ $('boiteChantier').style.display=synth?'block':'none';if(synth&&document.activeElement!==$('chantier'))$('chantier').value=synth.chantier||'';
+ if(!annots.length){$('liste').innerHTML='<div class="vide">Annotez le plan avec les outils de gauche.<br>Molette pour zoomer, clic droit glissé pour se déplacer.<br>Puis « ✨ Faire la synthèse ».</div>';return}
+ if(synth){tableau();return}
+ $('liste').innerHTML=annots.map((a,i)=>{const r=synth&&synth.remarques.find(x=>x.id===a.id);const c=r?CAT[r.categorie]:'#1b2a7a';
+  return `<div class="rem ${selection===a.id?'sel':''}" data-id="${a.id}"><div class="n" style="background:${c}">${i+1}</div><div><div class="t">${esc(r?r.texte:(a.texte||'Annotation '+ICO[a.type]))}</div>${r&&r.cotes?`<div class="m" style="color:#1b2a7a;font-weight:600">📏 ${esc(r.cotes)}</div>`:''}<div class="m">${ICO[a.type]} page ${a.page}${r?'':' · pas encore analysée'}</div>${r?`<span class="etiq" style="background:${c}22;color:${c}">${r.categorie}</span>`:''}</div><div class="x" data-x="${a.id}" title="Supprimer">✕</div></div>`}).join('');
+ document.querySelectorAll('.rem').forEach(d=>d.onclick=e=>{if(e.target.dataset.x){annots=annots.filter(a=>a.id!==e.target.dataset.x);changement();return}aller(d.dataset.id)})}
+async function aller(id){const a=annots.find(x=>x.id===id);selection=id;if(a.page!==pageNo){pageNo=a.page;await chargerPage(false)}
+ if(zoom<2.5){zoom=2.5;await rendre()}const b=boite(a),c=versCalque([(b[0]+b[2])/2,(b[1]+b[3])/2]),s=ajuste*zoom,v=$('vue');v.scrollLeft=c[0]*s-v.clientWidth/2+30;v.scrollTop=c[1]*s-v.clientHeight/2+30;dessiner();liste()}
+
+// ---------- lecture du plan dans le navigateur : mots + traits en points, origine en haut a gauche (format de regles.js)
+let pagesLues={};
+async function lirePage(n){if(pagesLues[n])return pagesLues[n];const pg=await pdf.getPage(n),vp=pg.getViewport({scale:1}),U=pdfjsLib.Util;
+ const mots=[];for(const it of (await pg.getTextContent()).items){if(!it.str||!it.str.trim())continue;
+  const t=U.transform(vp.transform,it.transform),hx=Math.hypot(t[2],t[3]),ang=Math.atan2(t[1],t[0]),L=it.width,parts=it.str.split(/(\s+)/);let off=0;
+  for(const p of parts){const w=L*p.length/Math.max(it.str.length,1);if(p.trim()){const ux=Math.cos(ang),uy=Math.sin(ang),bx=t[4]+ux*off,by=t[5]+uy*off,ex=bx+ux*w,ey=by+uy*w;
+    const px=Math.sin(ang)*hx,py=-Math.cos(ang)*hx;const xs=[bx,ex,bx+px,ex+px],ys=[by,ey,by+py,ey+py];mots.push({t:p,x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys),h:hx,r:Math.abs(ang)>0.1?1:0})}off+=w}}
+ const segs=[],ops=await pg.getOperatorList(),O=pdfjsLib.OPS,pile=[];let m=vp.transform.slice();
+ const pt=(x,y)=>[m[0]*x+m[2]*y+m[4],m[1]*x+m[3]*y+m[5]];
+ for(let i=0;i<ops.fnArray.length;i++){const f=ops.fnArray[i],a=ops.argsArray[i];
+  if(f===O.save)pile.push(m.slice());else if(f===O.restore)m=pile.pop()||m;else if(f===O.transform)m=U.transform(m,a);
+  else if(f===O.constructPath){const [cmds,c]=a;let k=0,cur=null,dep=null;for(const op of cmds){
+    if(op===O.moveTo){cur=pt(c[k],c[k+1]);dep=cur;k+=2}else if(op===O.lineTo){const p=pt(c[k],c[k+1]);if(cur)segs.push([cur[0],cur[1],p[0],p[1]]);cur=p;k+=2}
+    else if(op===O.rectangle){const x=c[k],y=c[k+1],w=c[k+2],h=c[k+3],q=[pt(x,y),pt(x+w,y),pt(x+w,y+h),pt(x,y+h)];for(let j=0;j<4;j++)segs.push([q[j][0],q[j][1],q[(j+1)%4][0],q[(j+1)%4][1]]);k+=4}
+    else if(op===O.curveTo){cur=pt(c[k+4],c[k+5]);k+=6}else if(op===O.curveTo2||op===O.curveTo3){cur=pt(c[k+2],c[k+3]);k+=4}else if(op===O.closePath){if(cur&&dep)segs.push([cur[0],cur[1],dep[0],dep[1]]);cur=dep}}}}
+ return pagesLues[n]={largeur:vp.width,hauteur:vp.height,mots,segments:segs}}
+const enMl=t=>t?String(t).replace(/\d+(?:[.,]\d+)?/g,v=>(parseFloat(v.replace(',','.'))/100).toFixed(2)):t;
+$('btnSynth').onclick=async()=>{if(!annots.length){toast('Aucune annotation à analyser.',false);return}
+ lancerSlogans();await new Promise(r=>setTimeout(r,50));
+ try{const ouvertures=[];
+  for(const [n,a] of annots.entries()){const pg=await lirePage(a.page),v1=(await pdf.getPage(a.page)).getViewport({scale:1}),b=boite(a);
+   const p0=v1.convertToViewportPoint(b[0],b[3]),p1=v1.convertToViewportPoint(b[2],b[1]);   // boite -> origine en haut a gauche
+   for(const o of Regles.analyser(pg,[Math.min(p0[0],p1[0]),Math.min(p0[1],p1[1]),Math.max(p0[0],p1[0]),Math.max(p0[1],p1[1])]))
+    ouvertures.push({...o,id:a.id,num:n+1,page:a.page,largeur:enMl(o.largeur),hauteur:enMl(o.hauteur),allege:enMl(o.allege),epaisseur:enMl(o.epaisseur),
+     remarque:[o.remarque,a.texte?'Note : '+a.texte:''].filter(Boolean).join(' ; ')})}
+  // ouvertures identiques regroupees (meme contour : gauche et droite restent 2 mannequins)
+  const grp=new Map();for(const o of ouvertures){const cle=JSON.stringify([o.type,o.forme,o.largeur,o.hauteur,o.allege,o.epaisseur,o.faces,o.contour]);
+   if(!grp.has(cle))grp.set(cle,{...o,quantite:0,reperes:[],ids:[],remarques:[],verif:[...(o.verif||[])]});const g=grp.get(cle);
+   g.quantite++;if(o.repere&&!g.reperes.includes(o.repere))g.reperes.push(o.repere);g.ids.push(o.id);if(o.remarque&&!g.remarques.includes(o.remarque))g.remarques.push(o.remarque)}
+  const groupes=[...grp.values()].map(g=>({...g,reperes:g.reperes.join(', '),remarque:g.remarques.join(' ; ')}));
+  const p1=await lirePage(1);
+  synth={chantier:(synth&&synth.chantier)||Regles.nomChantier(p1)||plan.replace(/\.pdf$/i,''),ouvertures,groupes,remarques:[],
+   resume:`${ouvertures.length} ouverture(s) relevée(s) — cases vides ou ⚠ : à compléter / vérifier.`};
+  sauverSynth();dessiner();liste();toast('Synthèse prête.')}
+ catch(x){console.error(x);toast('Synthèse impossible : '+x.message,false)}attente(false)};
+$('chantier').onchange=()=>{if(synth){synth.chantier=$('chantier').value.trim();sauverSynth();toast('Chantier enregistré.')}};
+document.querySelectorAll('.export .btn').forEach(b=>b.onclick=async()=>{const e=b.dataset.e;
+ if(e!=='pdf-annote'&&!synth){toast("Faites d'abord la synthèse.",false);return}
+ attente('Création du fichier…');try{const nom=await Exports[e]({plan,synth,annots,pdfData:await Stock.lire('plans',plan)});toast('Téléchargé : '+nom)}
+ catch(x){console.error(x);toast('Export impossible : '+x.message,false)}attente(false)});
+window.addEventListener('resize',()=>{if(page){const v=$('vue');ajuste=Math.min((v.clientWidth-60)/vp1.width,(v.clientHeight-60)/vp1.height);rendre()}});
+listePlans();
+</script></body></html>
